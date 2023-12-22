@@ -10,11 +10,11 @@ error_reporting(E_ALL);
 
 /**
  * file stats.
- * this is a really cool cli programm
+ * this is a <u>really cool</u> cli programm
  */
 $cli = app::new('filestats')
-    ->add_command(stats::class)
-    ->add_command(stats2::class);
+    ->add_command(stats::class, "stats")
+    ->add_command(stats2::class, "stats2");
 
 print_r($cli);
 
@@ -32,7 +32,11 @@ print_r($pos_args);
 
 print_r(parseParameters());
 
-terminal::test_colors();
+// terminal::test_colors();
+
+$cli->help();
+
+print "\n\e[1mfett \e[21m und normal\n";
 
 function parseParameters($noopt = array()) {
     $result = array();

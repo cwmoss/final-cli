@@ -24,12 +24,22 @@ class app {
         return $this;
     }
 
-    public function add_command(string $class) {
-        $this->commands[] = new command($class);
+    public function add_command(string $class, string $name = "") {
+        $this->commands[] = new command($class, $name);
         return $this;
     }
 
     public function help() {
+        terminal::println("<b>" . $this->name . '</b> version: ' . $this->version);
+        print "\n" . $this->short . "\n\n";
+        terminal::print($this->long);
+
+        print "\n\nthese commands are available:\n\n";
+        foreach ($this->commands as $command) {
+            print "  " . $command->name . "\n    " . $command->help_short . "\n\n";
+        }
+        print "\n";
+        terminal::println("<blink>now you choose</blink>");
     }
 
     public function fetch_description() {

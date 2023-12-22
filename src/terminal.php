@@ -4,6 +4,29 @@ namespace slowly\final_cli;
 
 class terminal {
 
+    static public array $tags = [];
+
+    public static function print($text) {
+        $text = strtr($text, self::tags());
+        print $text;
+    }
+
+    public static function tags() {
+        self::$tags = [
+            '<b>' => color::bold(),
+            '</b>' => color::reset(),
+            '<u>' => color::underline(),
+            '</u>' => color::reset_underline(),
+            '<blink>' => color::blink(),
+            '</blink>' => color::reset_blink(),
+        ];
+        return self::$tags;
+    }
+    public static function println($text) {
+        self::print($text);
+        print \PHP_EOL;
+    }
+
     public static function ansi($code, $text) {
         return "\e[{$code}m{$text}\e[0m";
     }

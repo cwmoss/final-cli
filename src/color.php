@@ -3,6 +3,9 @@
 
 https://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences
 https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html
+
+https://stackoverflow.com/questions/15579739/in-an-xterm-can-i-turn-off-bold-or-underline-without-resetting-the-current-colo
+disable bold: no support on mac os
 */
 
 namespace slowly\final_cli;
@@ -43,14 +46,29 @@ enum color: string {
     static function bold() {
         return self::ansi(1);
     }
+
+    // 21 doesn't work on mac
+    static function reset_bold() {
+        return self::ansi(0);
+    }
     static function underline() {
         return self::ansi(4);
+    }
+    static function reset_underline() {
+        return self::ansi(24);
     }
     static function reversed() {
         return self::ansi(7);
     }
+    static function reset_reversed() {
+        return self::ansi(27);
+    }
+
     static function blink() {
         return self::ansi(5);
+    }
+    static function reset_blink() {
+        return self::ansi(25);
     }
     static function ansi($code) {
         return "\e[{$code}m";
