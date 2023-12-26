@@ -6,9 +6,24 @@ class terminal {
 
     static public array $tags = [];
 
-    public static function print($text) {
+    public static function sprint($text, $indent = 0) {
         $text = strtr($text, self::tags());
-        print $text;
+        if ($indent) {
+            $text = str_replace(\PHP_EOL, (\PHP_EOL . str_repeat(" ", $indent)), $text);
+        }
+        return $text;
+    }
+
+    public static function sprintln($text, $indent = 0) {
+        return self::sprint($text . \PHP_EOL, $indent);
+    }
+
+    public static function print($text, $indent = 0) {
+        print self::sprint($text, $indent);
+    }
+
+    public static function println($text, $indent = 0) {
+        print self::sprintln($text, $indent);
     }
 
     public static function tags() {
@@ -21,10 +36,6 @@ class terminal {
             '</blink>' => color::reset_blink(),
         ];
         return self::$tags;
-    }
-    public static function println($text) {
-        self::print($text);
-        print \PHP_EOL;
     }
 
     public static function ansi($code, $text) {

@@ -19,6 +19,34 @@ class app {
         return $cli;
     }
 
+    public function run(array $argv) {
+        $parser = new parser($argv);
+        // print_r($this);
+        $help = $parser->get_switch('h', 'help');
+        if ($help && !$parser->command) {
+            $this->help();
+            return $this;
+        }
+        try {
+            $cmd = $this->match($parser);
+            if ($help) {
+                $this->help_command($cmd);
+            } else {
+                $cmd->run($parser);
+            }
+        } catch (error $e) {
+            print "⚠️  problem: " . $e->getMessage() . "\n";
+        }
+        return $this;
+    }
+
+    public function match($parser): command {
+        foreach ($this->commands as $cmd) {
+            if ($parser->command == $cmd->name) return $cmd;
+        }
+        throw new error("command not found ({$parser->command})");
+    }
+
     public function version(string $version) {
         $this->version = $version;
         return $this;
@@ -31,17 +59,22 @@ class app {
 
     public function help() {
         terminal::println("<b>" . $this->name . '</b> version: ' . $this->version);
-        print "\n" . $this->short . "\n\n";
-        terminal::print($this->long);
+        terminal::print("\n" . $this->short . "\n" . $this->long);
 
-        print "\n\nthese commands are available:\n\n";
+        terminal::print("\n\nthese commands are available:\n\n");
         foreach ($this->commands as $command) {
-            print "  " . $command->name . "\n    " . $command->help_short . "\n\n";
+            terminal::print("  <b>" . $command->name . "</b> " . $command->help_short . "\n\n");
         }
         print "\n";
-        terminal::println("<blink>now you choose</blink>");
+        // terminal::println("<blink>now you choose</blink>");
     }
 
+    public function help_command($command) {
+        terminal::println("<b>" . $this->name . '</b> version: ' . $this->version);
+        terminal::println("\n<b>{$command->name}</b> -- " .
+            $command->help_short . "\n" . $command->help_long, 2);
+        print "\n";
+    }
     public function fetch_description() {
         $comment = self::get_first_file_comment_block($this->caller['file']);
         [$this->short, $this->long] = self::get_description_from_phpdoc($comment);

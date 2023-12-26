@@ -14,29 +14,31 @@ error_reporting(E_ALL);
  */
 $cli = app::new('filestats')
     ->add_command(stats::class, "stats")
-    ->add_command(stats2::class, "stats2");
+    ->add_command(stats2::class, "stats2")
+    ->add_command("flight")
+    ->run($argv);
 
-print_r($cli);
+// print_r($cli);
 
-print terminal::bold("hi there\n");
+// print terminal::bold("hi there\n");
 
-$s = new stats;
-$s("innn", false, "more", "and more");
+#$s = new stats;
+#$s("innn", false, "more", "and more");
 
 $rest_index = null;
 
-print_r(getopt("h:", [], $rest_index));
-$pos_args = array_slice($argv, $rest_index);
-print_r($pos_args);
+//print_r(getopt("h:", [], $rest_index));
+// $pos_args = array_slice($argv, $rest_index);
+//print_r($pos_args);
 // print_r($rest);
 
-print_r(parseParameters());
+//print_r(parseParameters());
 
 // terminal::test_colors();
 
-$cli->help();
+// $cli->help();
 
-print "\n\e[1mfett \e[21m und normal\n";
+// print "\n\e[1mfett \e[21m und normal\n";
 
 function parseParameters($noopt = array()) {
     $result = array();
@@ -68,6 +70,19 @@ function parseParameters($noopt = array()) {
     }
     return $result;
 }
+/**
+ * lookup flights.
+ * looking for available flights using the
+ * aero world flight API
+ */
+function flight($to, ?string $date, $from = "Berlin", array $_via = []) {
+    print "looking for flights from {$from} to {$to}";
+    foreach ($_via as $v) {
+        print "\n  via {$v}";
+    }
+    print "\n";
+}
+
 
 class stats {
 
@@ -79,9 +94,11 @@ class stats {
         #[alias("i")]
         string $input,
         bool $nice,
-        ...$rest
+        array $_rest
     ) {
-        print "input: $input ~ nice: $nice ~ " . join(", ", $rest) . "\n";
+        var_dump($_rest);
+        print "input: $input ~ nice: $nice ~ " .
+            join(", ", $_rest) . "\n";
     }
 }
 
@@ -100,9 +117,10 @@ class stats2 {
      */
     public function __invoke(
         string $input,
-        bool $nice = true,
+
         array $inputfiles,
-        string $outdir
+        string $outdir,
+        bool $nice = true,
     ) {
         print "input: $input ~ nice: $nice ~ " . join(", ", $rest) . "\n";
     }
