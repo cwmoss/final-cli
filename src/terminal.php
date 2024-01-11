@@ -34,6 +34,8 @@ class terminal {
             '</u>' => color::reset_underline(),
             '<blink>' => color::blink(),
             '</blink>' => color::reset_blink(),
+            '<inv>' => color::inverse(),
+            '</inv>' => color::reset_inverse(),
         ];
         return self::$tags;
     }

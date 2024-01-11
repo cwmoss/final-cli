@@ -51,16 +51,17 @@ enum color: string {
     static function reset_bold() {
         return self::ansi(0);
     }
+
     static function underline() {
         return self::ansi(4);
     }
     static function reset_underline() {
         return self::ansi(24);
     }
-    static function reversed() {
+    static function inverse() {
         return self::ansi(7);
     }
-    static function reset_reversed() {
+    static function reset_inverse() {
         return self::ansi(27);
     }
 

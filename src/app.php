@@ -58,12 +58,14 @@ class app {
     }
 
     public function help() {
-        terminal::println("<b>" . $this->name . '</b> version: ' . $this->version);
+        terminal::println("<inv><b> " . $this->name . ' </b></inv> version: ' . $this->version);
         terminal::print("\n" . $this->short . "\n" . $this->long);
 
         terminal::print("\n\nthese commands are available:\n\n");
+        $max_len = max(array_map(fn ($c) => strlen($c->name), $this->commands));
+
         foreach ($this->commands as $command) {
-            terminal::print("  <b>" . $command->name . "</b> " . $command->help_short . "\n\n");
+            terminal::print("  <b>" . str_pad($command->name, $max_len + 2) . "</b> " . $command->help_short . "\n");
         }
         print "\n";
         // terminal::println("<blink>now you choose</blink>");
