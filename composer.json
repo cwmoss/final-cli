@@ -1,14 +1,15 @@
 {
-    "autoload": {
-        "psr-4": {
-            "slowly\\final_cli\\": "src"
-        }
-    },
-    "scripts": {
-        "test": "phpunit run -vv"
-    },
-    "require": {},
-    "require-dev": {
-        "phpunit/phpunit": "^10"
+  "name": "cwmoss/final-cli",
+  "autoload": {
+    "psr-4": {
+      "slowly\\final_cli\\": "src"
     }
+  },
+  "scripts": {
+    "test": "phpunit run -vv"
+  },
+  "require": {},
+  "require-dev": {
+    "phpunit/phpunit": "^10"
+  }
 }
