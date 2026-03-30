@@ -64,7 +64,7 @@ class app {
     }
 
     public function help() {
-        terminal::println("<inv><b> " . $this->name . ' </b></inv> version: ' . $this->version);
+        terminal::println("<inv><b> " . $this->name . ' </b></inv> ' . $this->version);
         terminal::print("\n" . $this->short . "\n" . $this->long);
 
         terminal::print("\n\nthese commands are available:\n\n");
@@ -78,7 +78,7 @@ class app {
     }
 
     public function help_command(command $command) {
-        terminal::println("<b>" . $this->name . '</b> version: ' . $this->version);
+        terminal::println("<inv><b> " . $this->name . ' </b></inv> ' . $this->version);
         terminal::println();
         terminal::println("<b>{$command->name}</b> -- " .
             $command->help_short, 2);
