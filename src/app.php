@@ -5,6 +5,7 @@ namespace slowly\final_cli;
 use Closure;
 use BackedEnum;
 use Psr\Container\ContainerInterface;
+use Throwable;
 
 class app {
 
@@ -26,6 +27,7 @@ class app {
             $this->help();
             return $this;
         }
+        $verbose = $parser->get_switch('v', 'verbose');
         try {
             $cmd = $this->match($parser);
             if ($help) {
@@ -43,6 +45,12 @@ class app {
             }
         } catch (error $e) {
             print "⚠️  problem: " . $e->getMessage() . "\n";
+            if ($verbose) print_r($cmd->parameters);
+            if ($verbose) print $e->getTraceAsString();
+        } catch (Throwable $e) {
+            print "⚠️  application problem: " . $e->getMessage() . "\n";
+            if ($verbose) print $e->getTraceAsString();
+            if ($verbose) print_r($e);
         }
     }
 
@@ -99,12 +107,9 @@ class app {
         }
         foreach ([...$pos, ...$named] as $para) {
             $name = "";
+            $pname = $para->is_optional ? "[$para->pname]" : "<$para->pname>";
             if ($para->is_positional) {
-                if ($para->is_optional) {
-                    $name = "[$para->pname]";
-                } else {
-                    $name = "<$para->pname>";
-                }
+                $name = $pname;
             } else {
                 $name = join("|", array_filter([
                     $para->short_option_name ? "-{$para->short_option_name}" : "",

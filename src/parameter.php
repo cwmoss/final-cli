@@ -53,6 +53,7 @@ class parameter {
             if ($long) {
                 $this->short_option_name = $short;
                 $this->long_option_name = $long;
+                $this->pname = $long;
             } else {
                 if (strlen($this->pname) == 1) {
                     $this->short_option_name = $this->pname;
@@ -67,6 +68,12 @@ class parameter {
                 $this->short_option_name = $attr->short_option;
                 $this->long_option_name = $attr->long_option;
                 $this->is_positional = false;
+            } else {
+                // only parameter name means, it's positional
+                // TODO: check w/ description?
+                $this->short_option_name = null;
+                $this->long_option_name = null;
+                $this->is_positional = true;
             }
             if ($attr->parameter_name) $this->pname = $attr->parameter_name;
             $this->description = $attr->description;

@@ -46,24 +46,41 @@ class command {
                         throw new error("missing argument {$pname}");
                     } elseif ($val === null) {
                         $val = $parm->default;
+                    } else {
+                        $val = self::convert_value($parm, $val);
                     }
                 }
             } else {
                 $val = $parser->get_opt($parm->long_option_name, $parm->short_option_name);
                 if (is_null($val)) {
-                    if ($parm->default) {
+                    if ($parm->is_optional) {
                         $val = $parm->default;
                     } elseif ($parm->is_nullable) {
                         $val = null;
                     } else {
                         throw new error("missing option {$pname}");
                     }
+                } else {
+                    $val = self::convert_value($parm, $val);
                 }
             }
             $args[] = $val;
         }
         // ($this->call)(...$args);
         return [$this->call, $args];
+    }
+
+    static public function convert_value(parameter $parm, string $val): mixed {
+        $type = $parm->type;
+        if ($parm->is_enum()) {
+            return $type::from($val);
+        }
+        return match ($type) {
+            null, "string" => $val,
+            "int" => intval($val),
+            "float" => floatval($val),
+            default => new $type($val)
+        };
     }
     public function name() {
         return $this->name;

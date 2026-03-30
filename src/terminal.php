@@ -38,6 +38,8 @@ class terminal {
             '</blink>' => color::reset_blink(),
             '<inv>' => color::inverse(),
             '</inv>' => color::reset_inverse(),
+            '<ok>' => color::bold() . color::green->bg() . color::white->fg() . ' ',
+            '</ok>' => ' ' . color::reset()
         ];
         return self::$tags;
     }
