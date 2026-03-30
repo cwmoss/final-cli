@@ -12,7 +12,7 @@ error_reporting(E_ALL);
  * file stats.
  * this is a <u>really cool</u> cli programm
  */
-$cli = app::new('filestats')
+$cli = new app('filestats')
     ->add_command(stats::class, "stats")
     ->add_command(stats2::class, "stats2")
     ->add_command("flight")
@@ -75,7 +75,7 @@ function parseParameters($noopt = array()) {
  * looking for available flights using the
  * aero world flight API
  */
-function flight($to, ?string $date, $from = "Berlin", array $_via = []) {
+function flight(string $to, ?string $date, $from = "Berlin", array $_via = []) {
     print "looking for flights from {$from} to {$to}";
     foreach ($_via as $v) {
         print "\n  via {$v}";
@@ -122,6 +122,6 @@ class stats2 {
         string $outdir,
         bool $nice = true,
     ) {
-        print "input: $input ~ nice: $nice ~ " . join(", ", $rest) . "\n";
+        print "input: $input ~ nice: $nice ~ " . join(", ", $inputfiles) . "\n";
     }
 }

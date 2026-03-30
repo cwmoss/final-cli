@@ -6,12 +6,19 @@ use Attribute;
 
 #[Attribute(Attribute::TARGET_ALL)]
 class alias {
-    function __construct(private string $parameter) {
-        // echo "Running " . __METHOD__,
-        //  " arg: " . $this->parameter . PHP_EOL;
-    }
-
-    public function set($obj) {
-        $obj->alias = $this->parameter;
+    /**
+     * @param null|string $name The name of the argument. If not provided, the name of the associated parameter or property will be used.
+     * @param null|string $description A short description explaining what this argument does.
+     * @param null|string $help Detailed information displayed when displayed help for the associated command.
+     * @param null|string $prompt A prompt displayed when prompting a user for this argument.
+     * @param array<int, string> $aliases Alternative names for this argument.
+     */
+    public function __construct(
+        public ?string $name = null,
+        public ?string $description = null,
+        public ?string $prompt = null,
+        public ?string $help = null,
+        public ?string $alias = null,
+    ) {
     }
 }

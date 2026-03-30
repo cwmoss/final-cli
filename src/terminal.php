@@ -9,20 +9,22 @@ class terminal {
     public static function sprint($text, $indent = 0) {
         $text = strtr($text, self::tags());
         if ($indent) {
-            $text = str_replace(\PHP_EOL, (\PHP_EOL . str_repeat(" ", $indent)), $text);
+            // TODO: better with split?
+            $ind = str_repeat(" ", $indent);
+            $text = $ind . str_replace(\PHP_EOL, (\PHP_EOL . $ind), $text);
         }
         return $text;
     }
 
-    public static function sprintln($text, $indent = 0) {
-        return self::sprint($text . \PHP_EOL, $indent);
+    public static function sprintln($text = "", $indent = 0) {
+        return self::sprint($text, $indent) . \PHP_EOL;
     }
 
     public static function print($text, $indent = 0) {
         print self::sprint($text, $indent);
     }
 
-    public static function println($text, $indent = 0) {
+    public static function println($text = "", $indent = 0) {
         print self::sprintln($text, $indent);
     }
 

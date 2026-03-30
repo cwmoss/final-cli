@@ -15,27 +15,41 @@ class command {
     public array $args = [];
     public array $aliases = [];
 
-    public array $tmp;
+
+    /**
+     * @param array<parameter> $parameters
+     */
+    public array $parameters = [];
+
     public string $help_short = "";
     public string $help_long = "";
-    public Closure $call;
+    public Closure|string $call;
 
-    public function __construct(public string $command, public ?string $name = null) {
-        if (!$name) {
+    public function __construct(public string|Closure $command, public ?string $name = null) {
+        if (!$name && is_string($command)) {
             $n = explode('\\', $command);
             $this->name = array_pop($n);
         }
         $this->inspect($command);
     }
-    public function run(parser $parser) {
+
+    public function run(parser $parser): array {
         $args = [];
-        foreach ($this->tmp as $parm) {
+        foreach ($this->parameters as $parm) {
             $name = $parm->name;
             $pname = parameter::get_parameter_name($name);
             if ($parm->is_switch) {
                 $val = $parser->get_switch($pname);
             } elseif ($parm->is_positional) {
-                $val = $parser->args;
+                if ($parm->type == "array") $val = $parser->args;
+                else {
+                    $val = array_shift($parser->args);
+                    if ($val === null && !$parm->is_optional) {
+                        throw new error("missing argument {$pname}");
+                    } elseif ($val === null) {
+                        $val = $parm->default;
+                    }
+                }
             } else {
                 $val = $parser->get_opt($pname);
                 if (is_null($val)) {
@@ -44,24 +58,34 @@ class command {
                     } elseif ($parm->is_nullable) {
                         $val = null;
                     } else {
-                        throw new error("missing argument {$pname}");
+                        throw new error("missing option {$pname}");
                     }
                 }
             }
             $args[] = $val;
         }
-        ($this->call)(...$args);
+        // ($this->call)(...$args);
+        return [$this->call, $args];
     }
     public function name() {
         return $this->name;
     }
-    public function inspect($class, $method = '__invoke') {
-        if (function_exists($class)) {
-            $this->call = $class(...);
-            $rflc = new ReflectionFunction($class);
+    // TODO: support callable as $class
+    public function inspect(string|Closure $class, $method = '__invoke') {
+        if (is_string($class)) {
+            if (function_exists($class)) {
+                $this->call = $class(...);
+                $rflc = new ReflectionFunction($class);
+            } else {
+                // class name
+                $this->call = $class;
+                // $this->call = fn (...$args) => (new $class)->$method(...$args);
+                $rflc = new ReflectionMethod($class, $method);
+            }
         } else {
-            $this->call = fn (...$args) => (new $class)->$method(...$args);
-            $rflc = new ReflectionMethod($class, $method);
+            // closure
+            $this->call = $class;
+            $rflc = new ReflectionFunction($class);
         }
 
         $parameters = $rflc->getParameters();
@@ -71,7 +95,7 @@ class command {
             $p = new parameter($parameter);
             $tmp[] = $p;
         }
-        $this->tmp = $tmp;
+        $this->parameters = $tmp;
 
         $this->get_doc($rflc);
     }
