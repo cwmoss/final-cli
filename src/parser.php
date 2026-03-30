@@ -47,6 +47,7 @@ class parser {
     function get_opt(...$tests) {
         // print_r($tests);
         foreach ($tests as $t) {
+            if ($t === null) continue;
             if (isset($this->opts[$t])) return $this->opts[$t];
         }
         return null;
@@ -55,6 +56,7 @@ class parser {
     function get_switch(...$tests) {
         // print_r($tests);
         foreach ($tests as $t) {
+            if ($t === null) continue;
             if (isset($this->switches[$t])) return true;
         }
         return false;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use PHPUnit\Framework\TestCase;
 use slowly\final_cli\command;
 use slowly\final_cli\parser;
+use slowly\final_cli\cli;
 
 final class BaseTest extends TestCase {
 
@@ -32,5 +33,17 @@ final class BaseTest extends TestCase {
         $parser = new parser(["dummy", "translate", "--force"]);
         $res = $cmd->run($parser);
         $this->assertSame([true], $res[1]);
+    }
+
+    public function testOption(): void {
+        $fun = fn(
+            #[cli("-d data-file")]
+            string $data
+        ) => $data;
+
+        $cmd = new command($fun, "translate");
+        $parser = new parser(["dummy", "translate", "-d=test.json"]);
+        $res = $cmd->run($parser);
+        $this->assertSame(["test.json"], $res[1]);
     }
 }

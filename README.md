@@ -1,5 +1,7 @@
 ## rules
 
+### use types and naming conventions
+
     // required argument
     string $_input_file => <input-file>
 
@@ -12,6 +14,9 @@
     // option with required value
     string $in => --in <in>
 
+    // option with required value
+    string $i => -i <option>
+
     // option with short alias with required value
     #[alias("i")]
     string $in => -i|--in <in>
@@ -21,3 +26,11 @@
 
     // option with optional value and documented name
     string $in__input_file="/dev/null" => --in [input-file] default: /dev/null
+
+### use attributes
+
+    #[cli("input-file")]
+    string $inp => <input-file>
+
+    #[cli("-i --input input-file")]
+    string $inp => -i|--input=<input-file>

@@ -3,8 +3,8 @@
 require_once __DIR__ . '/vendor/autoload.php';
 
 use slowly\final_cli\app;
-use slowly\final_cli\alias;
-use slowly\final_cli\terminal;
+use slowly\final_cli\cli;
+
 
 error_reporting(E_ALL);
 
@@ -75,7 +75,7 @@ function parseParameters($noopt = array()) {
  * looking for available flights using the
  * aero world flight API
  */
-function flight(string $to, ?string $date, $from = "Berlin", array $_via = []) {
+function flight(#[cli(description: "destination airport code or city name")] string $to, ?string $date, $from = "Berlin", array $_via = []) {
     print "looking for flights from {$from} to {$to}";
     foreach ($_via as $v) {
         print "\n  via {$v}";
@@ -91,7 +91,7 @@ class stats {
      * show the <b>stats</b> of files
      */
     public function __invoke(
-        #[alias("i")]
+        #[cli("-i")]
         string $input,
         bool $nice,
         array $_rest

@@ -13,8 +13,6 @@ class command {
     public array $flags = [];
     public array $opts = [];
     public array $args = [];
-    public array $aliases = [];
-
 
     /**
      * @param array<parameter> $parameters
@@ -37,9 +35,9 @@ class command {
         $args = [];
         foreach ($this->parameters as $parm) {
             $name = $parm->name;
-            $pname = parameter::get_parameter_name($name);
+            $pname = $parm->pname;
             if ($parm->is_switch) {
-                $val = $parser->get_switch($pname);
+                $val = $parser->get_switch($parm->long_option_name, $parm->short_option_name);
             } elseif ($parm->is_positional) {
                 if ($parm->type == "array") $val = $parser->args;
                 else {
@@ -51,7 +49,7 @@ class command {
                     }
                 }
             } else {
-                $val = $parser->get_opt($pname);
+                $val = $parser->get_opt($parm->long_option_name, $parm->short_option_name);
                 if (is_null($val)) {
                     if ($parm->default) {
                         $val = $parm->default;

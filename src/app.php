@@ -92,19 +92,34 @@ class app {
     }
 
     public function help_command_parameters(command $command) {
+        $pos = $named = [];
         foreach ($command->parameters as $para) {
-            $name = $para->pname;
+            if ($para->is_positional) $pos[] = $para;
+            else $named[] = $para;
+        }
+        foreach ([...$pos, ...$named] as $para) {
+            $name = "";
             if ($para->is_positional) {
                 if ($para->is_optional) {
-                    $name = "[$name]";
+                    $name = "[$para->pname]";
                 } else {
-                    $name = "<$name>";
+                    $name = "<$para->pname>";
                 }
+            } else {
+                $name = join("|", array_filter([
+                    $para->short_option_name ? "-{$para->short_option_name}" : "",
+                    $para->long_option_name ? "--{$para->long_option_name}" : ""
+                ]));
+                $name .= "=" . $para->pname;
             }
             terminal::println("<b>$name</b>", 2);
             if ($para->is_enum()) {
                 terminal::println($this->help_enum($para->type), 4);
             }
+            if ($para->description) {
+                terminal::println($para->description, 2);
+            }
+            terminal::println();
         }
     }
     public function help_enum($type) {
