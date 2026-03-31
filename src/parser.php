@@ -24,9 +24,23 @@ class parser {
         $this->parse($args);
     }
 
-    public function parse(array $args) {
+    public function called_with_empty_args(): bool {
+        return (!$this->command && !$this->args && !$this->opts && !$this->switches);
+    }
 
+    public function parse(array $args) {
+        $only_args_left = false;
         foreach ($args as $token) {
+            if ($only_args_left) {
+                $this->args[] = $token;
+                continue;
+            }
+
+            if ($token == "--") {
+                $only_args_left = true;
+                continue;
+            }
+
             if (preg_match('/^--([^=]+)=(.*)/', $token, $match)) {
                 $this->opts[$match[1]] = $match[2];
             } elseif (preg_match('/^--([^=]+)/', $token, $match)) {

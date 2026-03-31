@@ -10,14 +10,17 @@ class file {
     }
 
     static public function new_from_response(string $contents, string $mime, ?string $name, ?string $basedir = null): static {
+        [$_, $ext] = explode("/", explode(";", $mime)[0]);
+
         if (!$name) {
-            $name = tempnam($basedir ?: sys_get_temp_dir(), "cli-response-");
+            $tname = tempnam($basedir ?: sys_get_temp_dir(), "cli-response-");
+            $name = $tname . "." . $ext;
+            rename($tname, $name);
+        } else {
+            $n_ext = pathinfo($name, PATHINFO_EXTENSION);
+            if (!$n_ext) $name .= "." . $ext;
         }
-        $ext = pathinfo($name, PATHINFO_EXTENSION);
-        if (!$ext) {
-            [$_, $ext] = explode("/", explode(";", $mime)[0]);
-            $name .= "." . $ext;
-        }
+
         $f = new self($name);
         $f->put_contents($contents);
         return  $f;
@@ -37,12 +40,20 @@ class file {
         return file_get_contents($this->fname);
     }
 
-    public function put_contents(mixed $contents): string {
-        return file_put_contents($this->fname, $contents);
+    public function put_contents(mixed $contents): int {
+        $ok = file_put_contents($this->fname, $contents);
+        if ($ok === false) {
+            throw new error("could not write to file: $this->fname");
+        }
+        return $ok;
     }
 
     public function get_extension(): string {
         return pathinfo($this->fname, PATHINFO_EXTENSION);
+    }
+
+    public function get_size_human(): string {
+        return util::human_filesize(filesize($this->fname) ?: 0);
     }
 
     public function get_size(): int {

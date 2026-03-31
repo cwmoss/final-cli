@@ -13,6 +13,8 @@ class app {
     public array $caller;
     public string $short = "";
     public string $long = "";
+    public bool $help_when_empty = true;
+    public bool $debug = false;
 
     public function __construct(public string $name = 'a cli app', public string $version = "0.1") {
         $this->get_called_file(debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS, 3));
@@ -21,11 +23,13 @@ class app {
 
     public function run(array $argv, Closure|ContainerInterface|null $resolver = null) {
         $parser = new parser($argv);
+        if ($this->help_when_empty && $parser->called_with_empty_args()) {
+            return $this->help();
+        }
         // print_r($this);
         $help = $parser->get_switch('h', 'help');
         if ($help && !$parser->command) {
-            $this->help();
-            return $this;
+            return $this->help();
         }
         $verbose = $parser->get_switch('v', 'verbose');
         try {
@@ -71,15 +75,28 @@ class app {
         return $this;
     }
 
+    public function no_help_when_empty() {
+        $this->help_when_empty = false;
+        return $this;
+    }
+
+    public function debug() {
+        $this->debug = true;
+        return $this;
+    }
+
     public function help() {
         terminal::println("<inv><b> " . $this->name . ' </b></inv> ' . $this->version);
-        terminal::print("\n" . $this->short . "\n" . $this->long);
-
-        terminal::print("\n\nthese commands are available:\n\n");
+        terminal::println();
+        terminal::println($this->short);
+        terminal::println($this->long);
+        terminal::println();
+        terminal::println("these commands are available:");
+        terminal::println();
         $max_len = max(array_map(fn($c) => strlen($c->name), $this->commands));
 
         foreach ($this->commands as $command) {
-            terminal::print("  <b>" . str_pad($command->name, $max_len + 2) . "</b> " . $command->help_short . "\n");
+            terminal::println("  <b>" . str_pad($command->name, $max_len + 2) . "</b> " . $command->help_short);
         }
         terminal::println();
         // terminal::println("<blink>now you choose</blink>");
@@ -96,7 +113,7 @@ class app {
         }
         terminal::println();
         $this->help_command_parameters($command);
-        print "\n";
+        terminal::println();
     }
 
     public function help_command_parameters(command $command) {
@@ -111,11 +128,12 @@ class app {
             if ($para->is_positional) {
                 $name = $pname;
             } else {
-                $name = join("|", array_filter([
+                $name = join(" | ", array_filter([
                     $para->short_option_name ? "-{$para->short_option_name}" : "",
                     $para->long_option_name ? "--{$para->long_option_name}" : ""
                 ]));
-                $name .= "=" . $para->pname;
+                if (!$para->is_switch)
+                    $name .= "=<{$para->pname}>";
             }
             terminal::println("<b>$name</b>", 2);
             if ($para->is_enum()) {
