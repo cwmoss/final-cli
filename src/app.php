@@ -10,6 +10,7 @@ use Throwable;
 class app {
 
     public array $commands;
+    public ?command $default_command = null;
     public array $caller;
     public string $short = "";
     public string $long = "";
@@ -22,6 +23,7 @@ class app {
     }
 
     public function run(array $argv, Closure|ContainerInterface|null $resolver = null) {
+        $this->finalize();
         $parser = new parser($argv);
         if ($this->help_when_empty && $parser->called_with_empty_args()) {
             return $this->help();
@@ -58,9 +60,21 @@ class app {
         }
     }
 
+    public function finalize() {
+        $total = sizeof($this->commands);
+        if (!$total) throw new error("missing command definition");
+        if ($total == 1) {
+            $this->default_command = $this->commands[0];
+        }
+    }
+
     public function match($parser): command {
+        if (!$parser->command) {
+            if ($this->default_command) return $this->default_command;
+            throw new error("missing command");
+        }
         foreach ($this->commands as $cmd) {
-            if ($parser->command == $cmd->name) return $cmd;
+            if ($cmd->match($parser->command)) return $cmd;
         }
         throw new error("command not found ({$parser->command})");
     }
@@ -70,8 +84,15 @@ class app {
         return $this;
     }
 
-    public function add_command(string $class, string $name = "") {
-        $this->commands[] = new command($class, $name);
+    public function add_command(string $class, string $name = "", bool $is_default = false, ?string $alias = null) {
+        $cmd = new command($class, $name, $alias);
+        if ($is_default) {
+            if ($this->default_command) {
+                throw new error("can't define $cmd->name as custom command, because there is already one definde: $this->default_command->name");
+            }
+            $this->default_command = $cmd;
+        }
+        $this->commands[] = $cmd;
         return $this;
     }
 

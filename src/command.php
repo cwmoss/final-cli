@@ -23,12 +23,16 @@ class command {
     public string $help_long = "";
     public Closure|string $call;
 
-    public function __construct(public string|Closure $command, public ?string $name = null) {
+    public function __construct(public string|Closure $command, public ?string $name = null, public ?string $alias = null) {
         if (!$name && is_string($command)) {
             $n = explode('\\', $command);
             $this->name = array_pop($n);
         }
         $this->inspect($command);
+    }
+
+    public function match(string $name) {
+        return $this->name == $name || ($this->alias && $this->alias == $name);
     }
 
     public function run(parser $parser): array {

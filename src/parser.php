@@ -41,6 +41,11 @@ class parser {
                 continue;
             }
 
+            if ($token == "-") {
+                $this->args[] = $token;
+                continue;
+            }
+
             if (preg_match('/^--([^=]+)=(.*)/', $token, $match)) {
                 $this->opts[$match[1]] = $match[2];
             } elseif (preg_match('/^--([^=]+)/', $token, $match)) {
