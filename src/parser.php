@@ -19,16 +19,16 @@ class parser {
     // bin/miggi.php
     public string $script = "";
 
-    public function __construct(array $args) {
+    public function __construct(array $args, array $commands = []) {
         $this->script = array_shift($args);
-        $this->parse($args);
+        $this->parse($args, $commands);
     }
 
     public function called_with_empty_args(): bool {
         return (!$this->command && !$this->args && !$this->opts && !$this->switches);
     }
 
-    public function parse(array $args) {
+    public function parse(array $args, array $commands = []) {
         $only_args_left = false;
         foreach ($args as $token) {
             if ($only_args_left) {
@@ -58,8 +58,12 @@ class parser {
                 $this->args[] = $token;
             }
         }
-        if ($this->args) {
-            $this->command = array_shift($this->args);
+        if (count($commands) == 1) {
+            $this->command = $commands[0];
+        } else {
+            if ($this->args) {
+                $this->command = array_shift($this->args);
+            }
         }
     }
 

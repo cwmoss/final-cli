@@ -3,28 +3,29 @@
 namespace slowly\final_cli;
 
 use Closure;
-use BackedEnum;
 use Psr\Container\ContainerInterface;
 use Throwable;
 
 class app {
 
     public array $commands;
+    public array $command_names;
     public ?command $default_command = null;
     public array $caller;
     public string $short = "";
     public string $long = "";
     public bool $help_when_empty = true;
+    public bool $is_single_command = false;
     public bool $debug = false;
 
-    public function __construct(public string $name = 'a cli app', public string $version = "0.1") {
+    public function __construct(public string $name = 'a cli app', public string $version = "1.0") {
         $this->get_called_file(debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS, 3));
         $this->fetch_description();
     }
 
     public function run(array $argv, Closure|ContainerInterface|null $resolver = null) {
         $this->finalize();
-        $parser = new parser($argv);
+        $parser = new parser($argv, $this->command_names);
         if ($this->help_when_empty && $parser->called_with_empty_args()) {
             return $this->help();
         }
@@ -70,8 +71,11 @@ class app {
         $total = sizeof($this->commands);
         if (!$total) throw new error("missing command definition");
         if ($total == 1) {
+            $this->is_single_command = true;
             $this->default_command = $this->commands[0];
+            if (!$this->default_command->name) $this->default_command->name = $this->name;
         }
+        $this->command_names = array_map(fn(command $cmd) => $cmd->name, $this->commands);
         if ($this->debug) {
             print_r($this);
         }
@@ -93,7 +97,7 @@ class app {
         return $this;
     }
 
-    public function add_command(string $class, string $name = "", bool $is_default = false, ?string $alias = null) {
+    public function add_command(string|Closure $class, string $name = "", bool $is_default = false, ?string $alias = null) {
         $cmd = new command($class, $name, $alias);
         if ($is_default) {
             if ($this->default_command) {
@@ -166,8 +170,9 @@ class app {
                     $name .= "=<{$para->pname}>";
             }
             terminal::println("<b>$name</b>", 2);
-            if ($para->is_enum()) {
-                terminal::println($this->help_enum($para->type), 4);
+            $et = enum_type::is_enum($para->type);
+            if ($et) {
+                terminal::println($this->help_enum($et, $para->type), 2);
             }
             if ($para->description) {
                 terminal::println($para->description, 2);
@@ -175,12 +180,9 @@ class app {
             terminal::println();
         }
     }
-    public function help_enum($type) {
-        $parts = array_map(
-            fn(BackedEnum $case) => $case->value,
-            $type::cases(),
-        );
-        return join("|", $parts);
+
+    public function help_enum(enum_type $et, string $type) {
+        return join("|", $et->cases_as_strings($type));
     }
 
     public function fetch_description() {

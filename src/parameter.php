@@ -6,7 +6,6 @@ namespace slowly\final_cli;
 https://gist.github.com/mindplay-dk/082458088988e32256a827f9b7491e17
 */
 
-use BackedEnum;
 use ReflectionParameter;
 
 class parameter {
@@ -82,15 +81,12 @@ class parameter {
         # if (!$this->is_optional) $this->default = $parameter->getDefaultValue();
     }
 
-    public function is_enum(): bool {
-        return is_subclass_of($this->type, BackedEnum::class);
-    }
-
     public static function get_parameter_name($name) {
         $name = ltrim($name, '_');
         $name = strtr($name, '_', '-');
         return $name;
     }
+
     public function get_attributes($parameter): ?cli {
         $attrs = $parameter->getAttributes();
         foreach ($attrs as $attr) {

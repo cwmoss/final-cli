@@ -77,8 +77,9 @@ class command {
 
     static public function convert_value(parameter $parm, string $val): mixed {
         $type = $parm->type;
-        if ($parm->is_enum()) {
-            return $type::from($val);
+        $et = enum_type::is_enum($type);
+        if ($et) {
+            return $et->from_input_string($type, $val);
         }
         return match ($type) {
             null, "string" => $val,
