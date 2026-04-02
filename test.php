@@ -4,7 +4,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 use slowly\final_cli\app;
 use slowly\final_cli\cli;
-
+use slowly\final_cli\file;
 
 error_reporting(E_ALL);
 
@@ -76,12 +76,22 @@ function parseParameters($noopt = array()) {
  * looking for available flights using the
  * aero world flight API
  */
-function flight(#[cli(description: "destination airport code or city name")] string $to, ?string $date, $from = "Berlin", array $_via = []) {
+function flight(
+    #[cli(description: "destination airport code or city name")] string $to,
+    ?string $date,
+    $from = "Berlin",
+    ?file $rev = null,
+    array $_via = []
+) {
     print "looking for flights from {$from} to {$to}";
     foreach ($_via as $v) {
         print "\n  via {$v}";
     }
     print "\n";
+    if ($rev) {
+        print(strrev($rev->get_contents()));
+        print "\n";
+    }
 }
 
 

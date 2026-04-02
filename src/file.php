@@ -62,6 +62,7 @@ class file {
 
     static public function resolve_filename(string $name) {
         if ($name[0] == '/') return $name;
+        if ($name == "-") return "php://stdin";
         if ($name[0] == '~') return util::home_dir() . "/" . ltrim($name, "~");
 
         $cwd = getcwd();
