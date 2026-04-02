@@ -9,11 +9,6 @@ enum title: string {
     case Mister = 'Mr.';
     case Misses = 'Mrs.';
     case Miss  = 'Ms.';
-
-    // TODO: over the top? or not?
-    static public function cli_accept_input(): string {
-        return "name";
-    }
 }
 
 /**
@@ -23,7 +18,6 @@ enum title: string {
  * <u>https://github.com/nategood/commando</u>
  */
 $hello_cmd = new app("hello")
-    // ->debug()
     ->add_command(function (
         #[cli("name", description: "A person's name")]
         $name,

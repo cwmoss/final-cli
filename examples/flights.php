@@ -78,12 +78,12 @@ function parseParameters($noopt = array()) {
  */
 function flight(
     #[cli(description: "destination airport code or city name")] string $to,
-    ?string $date,
+    DateTime $date = new DateTime(),
     $from = "Berlin",
     ?file $rev = null,
     array $_via = []
 ) {
-    print "looking for flights from {$from} to {$to}";
+    print "looking for flights from {$from} to {$to} on {$date->format('d.m.y')}";
     foreach ($_via as $v) {
         print "\n  via {$v}";
     }
