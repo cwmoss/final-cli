@@ -13,6 +13,7 @@ error_reporting(E_ALL);
  * this is a <u>really cool</u> cli programm
  */
 $cli = new app('filestats')
+    // ->debug()
     ->add_command(stats::class, "stats")
     ->add_command(stats2::class, "stats2")
     ->add_command("flight")
@@ -118,10 +119,10 @@ class stats2 {
     public function __invoke(
         string $input,
 
-        array $inputfiles,
+        string $inputfiles,
         string $outdir,
         bool $nice = true,
     ) {
-        print "input: $input ~ nice: $nice ~ " . join(", ", $inputfiles) . "\n";
+        print "input: $input ~ nice: $nice ~ " . join(", ", [$inputfiles]) . "\n";
     }
 }

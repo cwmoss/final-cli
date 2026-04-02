@@ -21,7 +21,7 @@ class command {
 
     public string $help_short = "";
     public string $help_long = "";
-    public Closure|string $call;
+    public Closure|array $call;
 
     public function __construct(public string|Closure $command, public ?string $name = null, public ?string $alias = null) {
         if (!$name && is_string($command)) {
@@ -56,6 +56,7 @@ class command {
                 }
             } else {
                 $val = $parser->get_opt($parm->long_option_name, $parm->short_option_name);
+                // TODO: array
                 if (is_null($val)) {
                     if ($parm->is_optional) {
                         $val = $parm->default;
@@ -90,14 +91,15 @@ class command {
         return $this->name;
     }
     // TODO: support callable as $class
-    public function inspect(string|Closure $class, $method = '__invoke') {
+    public function inspect(string|Closure $class) {
         if (is_string($class)) {
             if (function_exists($class)) {
                 $this->call = $class(...);
                 $rflc = new ReflectionFunction($class);
             } else {
                 // class name
-                $this->call = $class;
+                [$class, $method] = explode("@", $class) + [1 => "__invoke"];
+                $this->call = [$class, $method];
                 // $this->call = fn (...$args) => (new $class)->$method(...$args);
                 $rflc = new ReflectionMethod($class, $method);
             }

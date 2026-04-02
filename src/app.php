@@ -40,12 +40,18 @@ class app {
                 $this->help_command($cmd);
             } else {
                 [$call, $args] = $cmd->run($parser);
-                if (is_string($call) && $resolver) {
-                    if ($resolver instanceof ContainerInterface) {
-                        $call = $resolver->get($call);
+                if (is_array($call)) {
+                    [$cls, $mth] = $call;
+                    if ($resolver) {
+                        if ($resolver instanceof ContainerInterface) {
+                            $obj = $resolver->get($cls);
+                        } else {
+                            $obj = $resolver($cls);
+                        }
                     } else {
-                        $call = $resolver($call);
+                        $obj = new $cls;
                     }
+                    $call = [$obj, $mth];
                 }
                 ($call)(...$args);
             }
@@ -65,6 +71,9 @@ class app {
         if (!$total) throw new error("missing command definition");
         if ($total == 1) {
             $this->default_command = $this->commands[0];
+        }
+        if ($this->debug) {
+            print_r($this);
         }
     }
 
