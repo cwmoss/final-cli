@@ -18,7 +18,11 @@ class app {
     public bool $is_single_command = false;
     public bool $debug = false;
 
-    public function __construct(public string $name = 'a cli app', public string $version = "1.0") {
+    public function __construct(
+        public string $name = 'a cli app',
+        public string $version = "1.0",
+        public ?string $tag = null
+    ) {
         $this->get_called_file(debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS, 3));
         $this->fetch_description();
     }
@@ -47,7 +51,7 @@ class app {
                         if ($resolver instanceof ContainerInterface) {
                             $obj = $resolver->get($cls);
                         } else {
-                            $obj = $resolver($cls);
+                            $obj = $resolver($cls, $parser);
                         }
                     } else {
                         $obj = new $cls;
@@ -119,8 +123,12 @@ class app {
         return $this;
     }
 
+    public function tag(): string {
+        if ($this->tag) return $this->tag;
+        return "<inv><b> " . $this->name . " </b></inv>";
+    }
     public function help() {
-        terminal::println("<inv><b> " . $this->name . ' </b></inv> ' . $this->version);
+        terminal::println($this->tag() . ' ' . $this->version);
         terminal::println();
         terminal::println($this->short);
         terminal::println($this->long);
@@ -137,7 +145,7 @@ class app {
     }
 
     public function help_command(command $command) {
-        terminal::println("<inv><b> " . $this->name . ' </b></inv> ' . $this->version);
+        terminal::println($this->tag() . ' ' . $this->version);
         terminal::println();
         terminal::println("<b>{$command->name}</b> -- " .
             $command->help_short, 2);
