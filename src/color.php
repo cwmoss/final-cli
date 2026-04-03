@@ -8,7 +8,7 @@ https://stackoverflow.com/questions/15579739/in-an-xterm-can-i-turn-off-bold-or-
 disable bold: no support on mac os
 */
 
-namespace slowly\final_cli;
+namespace cwmoss\final_cli;
 
 enum color: string {
     case black = "30";

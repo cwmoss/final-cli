@@ -2,9 +2,9 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use slowly\final_cli\app;
-use slowly\final_cli\cli;
-use slowly\final_cli\file;
+use cwmoss\final_cli\app;
+use cwmoss\final_cli\cli;
+use cwmoss\final_cli\file;
 
 error_reporting(E_ALL);
 

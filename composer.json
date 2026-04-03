@@ -2,7 +2,7 @@
   "name": "cwmoss/final-cli",
   "autoload": {
     "psr-4": {
-      "slowly\\final_cli\\": "src"
+      "cwmoss\\final_cli\\": "src"
     }
   },
   "scripts": {

@@ -1,6 +1,6 @@
 <?php
 
-namespace slowly\final_cli;
+namespace cwmoss\final_cli;
 
 /*
 https://gist.github.com/mindplay-dk/082458088988e32256a827f9b7491e17
@@ -90,7 +90,7 @@ class parameter {
     public function get_attributes($parameter): ?cli {
         $attrs = $parameter->getAttributes();
         foreach ($attrs as $attr) {
-            if (!str_starts_with($attr->getName(), 'slowly\\final_cli')) continue;
+            if (!str_starts_with($attr->getName(), 'cwmoss\\final_cli')) continue;
             // print $attr->getName();
             $a = $attr->newInstance();
             return $a;

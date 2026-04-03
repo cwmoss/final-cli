@@ -1,9 +1,9 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use slowly\final_cli\app;
-use slowly\final_cli\cli;
-use slowly\final_cli\terminal;
+use cwmoss\final_cli\app;
+use cwmoss\final_cli\cli;
+use cwmoss\final_cli\terminal;
 
 enum title: string {
     case Mister = 'Mr.';
