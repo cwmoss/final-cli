@@ -32,4 +32,31 @@ class util {
         if ($factor > 0) $sz = 'KMGT';
         return sprintf("%.{$decimals}f %sB", $bytes / pow(1024, $factor), $sz[$factor - 1] ?? "");
     }
+
+    static function load_dot_env_file($env_file, $silent = true): bool {
+
+        if (!is_readable($env_file)) {
+            if ($silent) return false;
+            throw new \RuntimeException(sprintf('%s .env file is not readable', $env_file));
+        }
+
+        $lines = file($env_file);
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (!$line) continue;
+            if (strpos(trim($line), '#') === 0) {
+                continue;
+            }
+
+            list($name, $value) = explode('=', $line, 2);
+            $name = trim($name);
+            $value = trim($value);
+
+            if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
+                $_ENV[$name] = $value;
+                $_SERVER[$name] = $value;
+            }
+        }
+        return true;
+    }
 }
