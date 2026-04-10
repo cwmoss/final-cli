@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
-use slowly\final_cli\command;
-use slowly\final_cli\parser;
-use slowly\final_cli\cli;
+use cwmoss\final_cli\command;
+use cwmoss\final_cli\parser;
+use cwmoss\final_cli\cli;
 
 final class BaseTest extends TestCase {
 
@@ -43,6 +43,7 @@ final class BaseTest extends TestCase {
 
         $cmd = new command($fun, "translate");
         $parser = new parser(["dummy", "translate", "-d=test.json"]);
+        // print_r($cmd);
         $res = $cmd->run($parser);
         $this->assertSame(["test.json"], $res[1]);
     }

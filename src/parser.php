@@ -1,6 +1,6 @@
 <?php
 
-namespace slowly\final_cli;
+namespace cwmoss\final_cli;
 
 class parser {
 

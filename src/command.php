@@ -1,6 +1,6 @@
 <?php
 
-namespace slowly\final_cli;
+namespace cwmoss\final_cli;
 
 use PHPUnit\Framework\MockObject\Rule\Parameters;
 use ReflectionFunction;
@@ -47,7 +47,7 @@ class command {
                 else {
                     $val = array_shift($parser->args);
                     if ($val === null && !$parm->is_optional) {
-                        throw new error("missing argument {$pname}");
+                        throw new error("missing argument: {$pname}");
                     } elseif ($val === null) {
                         $val = $parm->default;
                     } else {
@@ -63,7 +63,7 @@ class command {
                     } elseif ($parm->is_nullable) {
                         $val = null;
                     } else {
-                        throw new error("missing option {$pname}");
+                        throw new error("missing option: {$pname}");
                     }
                 } else {
                     $val = self::convert_value($parm, $val);

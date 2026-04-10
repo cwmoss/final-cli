@@ -1,6 +1,6 @@
 <?php
 
-namespace slowly\final_cli;
+namespace cwmoss\final_cli;
 
 use Closure;
 use Psr\Container\ContainerInterface;
@@ -18,7 +18,12 @@ class app {
     public bool $is_single_command = false;
     public bool $debug = false;
 
-    public function __construct(public string $name = 'a cli app', public string $version = "1.0") {
+    public function __construct(
+        public string $name = 'a cli app',
+        public string $version = "1.0",
+        public ?string $tag = null,
+        public int $indent = 2
+    ) {
         $this->get_called_file(debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS, 3));
         $this->fetch_description();
     }
@@ -47,7 +52,7 @@ class app {
                         if ($resolver instanceof ContainerInterface) {
                             $obj = $resolver->get($cls);
                         } else {
-                            $obj = $resolver($cls);
+                            $obj = $resolver($cls, $parser);
                         }
                     } else {
                         $obj = new $cls;
@@ -119,31 +124,38 @@ class app {
         return $this;
     }
 
+    public function tag(): string {
+        if ($this->tag) return $this->tag;
+        return "<inv><b> " . $this->name . " </b></inv>";
+    }
     public function help() {
-        terminal::println("<inv><b> " . $this->name . ' </b></inv> ' . $this->version);
+        terminal::println($this->tag() . ' ' . $this->version);
         terminal::println();
-        terminal::println($this->short);
-        terminal::println($this->long);
+        terminal::println($this->short, $this->indent);
+        terminal::println($this->long, $this->indent);
         terminal::println();
         terminal::println("these commands are available:");
         terminal::println();
         $max_len = max(array_map(fn($c) => strlen($c->name), $this->commands));
 
         foreach ($this->commands as $command) {
-            terminal::println("  <b>" . str_pad($command->name, $max_len + 2) . "</b> " . $command->help_short);
+            terminal::println(
+                "<b>" . str_pad($command->name, $max_len + 2) . "</b> " . $command->help_short,
+                $this->indent
+            );
         }
         terminal::println();
         // terminal::println("<blink>now you choose</blink>");
     }
 
     public function help_command(command $command) {
-        terminal::println("<inv><b> " . $this->name . ' </b></inv> ' . $this->version);
+        terminal::println($this->tag() . ' ' . $this->version);
         terminal::println();
         terminal::println("<b>{$command->name}</b> -- " .
-            $command->help_short, 2);
+            $command->help_short, $this->indent);
         if ($command->help_long) {
             terminal::println();
-            terminal::println($command->help_long, 2);
+            terminal::println($command->help_long, $this->indent);
         }
         terminal::println();
         $this->help_command_parameters($command);
@@ -169,13 +181,13 @@ class app {
                 if (!$para->is_switch)
                     $name .= "=<{$para->pname}>";
             }
-            terminal::println("<b>$name</b>", 2);
+            terminal::println("<b>$name</b>", $this->indent);
             $et = enum_type::is_enum($para->type);
             if ($et) {
-                terminal::println($this->help_enum($et, $para->type), 2);
+                terminal::println($this->help_enum($et, $para->type), $this->indent);
             }
             if ($para->description) {
-                terminal::println($para->description, 2);
+                terminal::println($para->description, $this->indent);
             }
             terminal::println();
         }
