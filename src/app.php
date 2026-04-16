@@ -18,6 +18,8 @@ class app {
     public bool $is_single_command = false;
     public bool $debug = false;
 
+    static public int $verbose = 0;
+
     public function __construct(
         public string $name = 'a cli app',
         public string $version = "1.0",
@@ -39,7 +41,7 @@ class app {
         if ($help && !$parser->command) {
             return $this->help();
         }
-        $verbose = $parser->get_switch('v', 'verbose');
+        self::$verbose = (int) $parser->get_switch('v', 'verbose');
         try {
             $cmd = $this->match($parser);
             if ($help) {
@@ -63,12 +65,11 @@ class app {
             }
         } catch (error $e) {
             print "⚠️  problem: " . $e->getMessage() . "\n";
-            if ($verbose) print_r($cmd->parameters);
-            if ($verbose) print $e->getTraceAsString();
+            print error::nice_output($e, self::$verbose);
+            // if (self::$verbose) print_r($cmd->parameters);
         } catch (Throwable $e) {
             print "⚠️  application problem: " . $e->getMessage() . "\n";
-            if ($verbose) print $e->getTraceAsString();
-            if ($verbose) print_r($e);
+            print error::nice_output($e, true);
         }
     }
 
