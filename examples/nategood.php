@@ -36,6 +36,6 @@ $hello_cmd = new app("hello")
             $name,
             $educate ? " " . $level[$educate] : ""
         );
-        terminal::println($hello);
+        new terminal()->println($hello);
     })
     ->run($argv);

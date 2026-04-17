@@ -6,7 +6,12 @@ class terminal {
 
     static public array $tags = [];
 
-    public static function sprint($text, $indent = 0) {
+    public function set_output($mode = "cli") {
+        self::set_tags($mode);
+        return $this;
+    }
+
+    public function sprint($text, $indent = 0) {
         $text = strtr($text, self::tags());
         if ($indent) {
             // TODO: better with split?
@@ -16,33 +21,59 @@ class terminal {
         return $text;
     }
 
-    public static function sprintln($text = "", $indent = 0) {
-        return self::sprint($text, $indent) . \PHP_EOL;
+    public function sprintln($text = "", $indent = 0) {
+        return $this->sprint($text, $indent) . \PHP_EOL;
     }
 
-    public static function print($text, $indent = 0) {
-        print self::sprint($text, $indent);
+    public function print($text, $indent = 0) {
+        print $this->sprint($text, $indent);
     }
 
-    public static function println($text = "", $indent = 0) {
-        print self::sprintln($text, $indent);
+    public function println($text = "", $indent = 0) {
+        print $this->sprintln($text, $indent);
+    }
+
+    public static function set_tags($mode = "cli") {
+        if ($mode == "cli") {
+            self::$tags = [
+                '<b>' => color::bold(),
+                '</b>' => color::reset(),
+                '<u>' => color::underline(),
+                '</u>' => color::reset_underline(),
+                '<blink>' => color::blink(),
+                '</blink>' => color::reset_blink(),
+                '<inv>' => color::inverse(),
+                '</inv>' => color::reset_inverse(),
+                '<green>' => color::green->fg(),
+                '</green>' => color::reset(),
+                '<pre>' => '',
+                '</pre>' => '',
+                '<ok>' => color::bold() . color::green->bg() . color::white->fg() . ' ',
+                '</ok>' => ' ' . color::reset()
+            ];
+            return;
+        }
+        self::$tags = [
+            '<b>' => '<strong>',
+            '</b>' => '</strong>',
+            '<u>' => '<em>',
+            '</u>' => '</em>',
+            '<blink>' => '<mark>',
+            '</blink>' => '</mark>',
+            '<inv>' => '<span class="inv">',
+            '</inv>' => '</span>',
+            '<green>' => '<span class="green">',
+            '</green>' => '</span>',
+            '<pre>' => '<pre>',
+            '</pre>' => '</pre>',
+            '<ok>' => '<span class="ok"> ',
+            '</ok>' => ' </span>',
+        ];
+        // html mode
     }
 
     public static function tags() {
-        self::$tags = [
-            '<b>' => color::bold(),
-            '</b>' => color::reset(),
-            '<u>' => color::underline(),
-            '</u>' => color::reset_underline(),
-            '<blink>' => color::blink(),
-            '</blink>' => color::reset_blink(),
-            '<inv>' => color::inverse(),
-            '</inv>' => color::reset_inverse(),
-            '<pre>' => '',
-            '</pre>' => '',
-            '<ok>' => color::bold() . color::green->bg() . color::white->fg() . ' ',
-            '</ok>' => ' ' . color::reset()
-        ];
+        if (!self::$tags) self::set_tags();
         return self::$tags;
     }
 

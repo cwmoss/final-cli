@@ -130,40 +130,43 @@ class app {
         return "<inv><b> " . $this->name . " </b></inv>";
     }
     public function help() {
-        terminal::println($this->tag() . ' ' . $this->version);
-        terminal::println();
-        terminal::println($this->short, $this->indent);
-        terminal::println($this->long, $this->indent);
-        terminal::println();
-        terminal::println("these commands are available:");
-        terminal::println();
+        $terminal = new terminal();
+        $terminal->println($this->tag() . ' ' . $this->version);
+        $terminal->println();
+        $terminal->println($this->short, $this->indent);
+        $terminal->println($this->long, $this->indent);
+        $terminal->println();
+        $terminal->println("these commands are available:");
+        $terminal->println();
         $max_len = max(array_map(fn($c) => strlen($c->name), $this->commands));
 
         foreach ($this->commands as $command) {
-            terminal::println(
+            $terminal->println(
                 "<b>" . str_pad($command->name, $max_len + 2) . "</b> " . $command->help_short,
                 $this->indent
             );
         }
-        terminal::println();
+        $terminal->println();
         // terminal::println("<blink>now you choose</blink>");
     }
 
     public function help_command(command $command) {
-        terminal::println($this->tag() . ' ' . $this->version);
-        terminal::println();
-        terminal::println("<b>{$command->name}</b> -- " .
+        $terminal = new terminal();
+        $terminal->println($this->tag() . ' ' . $this->version);
+        $terminal->println();
+        $terminal->println("<b>{$command->name}</b> -- " .
             $command->help_short, $this->indent);
         if ($command->help_long) {
-            terminal::println();
-            terminal::println($command->help_long, $this->indent);
+            $terminal->println();
+            $terminal->println($command->help_long, $this->indent);
         }
-        terminal::println();
+        $terminal->println();
         $this->help_command_parameters($command);
-        terminal::println();
+        $terminal->println();
     }
 
     public function help_command_parameters(command $command) {
+        $terminal = new terminal();
         $pos = $named = [];
         foreach ($command->parameters as $para) {
             if ($para->is_positional) $pos[] = $para;
@@ -182,15 +185,15 @@ class app {
                 if (!$para->is_switch)
                     $name .= "=<{$para->pname}>";
             }
-            terminal::println("<b>$name</b>", $this->indent);
+            $terminal->println("<b>$name</b>", $this->indent);
             $et = enum_type::is_enum($para->type);
             if ($et) {
-                terminal::println($this->help_enum($et, $para->type), $this->indent);
+                $terminal->println($this->help_enum($et, $para->type), $this->indent);
             }
             if ($para->description) {
-                terminal::println($para->description, $this->indent);
+                $terminal->println($para->description, $this->indent);
             }
-            terminal::println();
+            $terminal->println();
         }
     }
 
