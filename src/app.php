@@ -3,6 +3,7 @@
 namespace cwmoss\final_cli;
 
 use Closure;
+use Phar;
 use Psr\Container\ContainerInterface;
 use Throwable;
 
@@ -105,14 +106,23 @@ class app {
 
     public function get_version(): string {
         $v = $this->version;
-        if (php_sapi_name() == "micro") {
+        if (self::is_upgradeable()) {
             $v .= " " . self::get_os() . "/" . self::get_arch();
             $v .= " " . self::get_self();
         }
         return $v;
     }
 
-    static public function get_self() {
+    static public function is_upgradeable(): bool {
+        return php_sapi_name() == "micro" || self::is_phar();
+    }
+
+    static public function is_phar(): bool {
+        return method_exists(Phar::class, "running") && Phar::running(false) !== "";
+    }
+
+    static public function get_self(): string {
+        if (self::is_phar()) return Phar::running(false);
         return $_SERVER["_"];
     }
 
@@ -141,9 +151,11 @@ class app {
     }
 
     public function add_upgrade_command(string $github_project) {
-        $up = new upgrade($this->version, $github_project);
+        if (!self::is_upgradeable()) return $this;
+        $up = new upgrade($this->version, $github_project, self::get_self());
         return $this->add_command($up, "upgrade");
     }
+
     public function no_help_when_empty() {
         $this->help_when_empty = false;
         return $this;
