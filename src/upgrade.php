@@ -68,36 +68,16 @@ class upgrade {
 
     public function fetch_recent_version() {
         $url = "https://api.github.com/repos/{$this->github_project}/releases/latest";
-        $data = $this->http_get($url);
+        $data = new fetch()->get($url);
         if (!$data) {
             return false;
         }
         return json_decode($data, true);
     }
 
-    private function http_get(string $url): false|string {
-        if (function_exists('curl_init')) {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'final-cli-upgrade');
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-            $result = curl_exec($ch);
-            return $result;
-        } else {
-            $context = stream_context_create([
-                'http' => [
-                    'user_agent' => 'final-cli-upgrade',
-                    'timeout' => 30,
-                ]
-            ]);
-            return file_get_contents($url, false, $context);
-        }
-    }
-
     public function download_and_replace(array $release) {
         $term = new terminal;
+        $term->println("Current version: {$this->current_version}");
         $term->println("New version: {$release['tag_name']}");
         [$os, $arch] = $this->get_platform();
         $asset = null;
@@ -120,7 +100,7 @@ class upgrade {
         $url = $asset['browser_download_url'];
         $term->println("Start download: {$url}");
         $temp_file = tempnam(sys_get_temp_dir(), 'upgrade_');
-        if (!$this->download_file($url, $temp_file)) {
+        if (!new fetch()->download_file($url, $temp_file)) {
             $term->println("<red>Failed to download file.</red>");
             return;
         }
@@ -206,29 +186,6 @@ class upgrade {
         return [$os, $arch];
     }
 
-    private function download_file(string $url, string $dest): bool {
-        $fp = fopen($dest, 'w');
-        if (!$fp) return false;
-        if (function_exists('curl_init')) {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            curl_setopt($ch, CURLOPT_FILE, $fp);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'final-cli-upgrade');
-            curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-            $result = curl_exec($ch);
-        } else {
-            $data = $this->http_get($url);
-            if ($data === false) {
-                fclose($fp);
-                return false;
-            }
-            fwrite($fp, $data);
-            $result = true;
-        }
-        fclose($fp);
-        return $result !== false;
-    }
 
     private function rmdir_recursive(string $dir): void {
         if (!is_dir($dir)) return;
