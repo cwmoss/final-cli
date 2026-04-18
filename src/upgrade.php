@@ -50,19 +50,197 @@ class upgrade {
             $term->println("You're already on the latest version: <b>{$this->current_version}</b>");
             return;
         }
+        $this->download_and_replace($new_version);
     }
 
     public function check_version(): false|array {
+        $release = $this->fetch_recent_version();
+        if (!$release) {
+            return false;
+        }
+        $latest_version = ltrim($release['tag_name'], 'v');
+        $current = ltrim($this->current_version, 'v');
+        if (version_compare($latest_version, $current, '>')) {
+            return $release;
+        }
         return false;
     }
 
     public function fetch_recent_version() {
-        // ex: https://api.github.com/repos/cwmoss/slowfoot/releases
-        // https://api.github.com/repos/cwmoss/slowfoot/releases/latest
-        // tag_name created_at 
-        // assets: browser_download_url, digest, name
+        $url = "https://api.github.com/repos/{$this->github_project}/releases/latest";
+        $data = $this->http_get($url);
+        if (!$data) {
+            return false;
+        }
+        return json_decode($data, true);
     }
 
-    public function download_and_replace() {
+    private function http_get(string $url): false|string {
+        if (function_exists('curl_init')) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'final-cli-upgrade');
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            $result = curl_exec($ch);
+            return $result;
+        } else {
+            $context = stream_context_create([
+                'http' => [
+                    'user_agent' => 'final-cli-upgrade',
+                    'timeout' => 30,
+                ]
+            ]);
+            return file_get_contents($url, false, $context);
+        }
+    }
+
+    public function download_and_replace(array $release) {
+        $term = new terminal;
+        $term->println("New version: {$release['tag_name']}");
+        [$os, $arch] = $this->get_platform();
+        $asset = null;
+        $needs_phar = str_ends_with($this->destination, ".phar");
+        foreach ($release['assets'] as $a) {
+            $name = $a['name'];
+            if ($needs_phar && $name === "{$this->program_name}.phar") {
+                $asset = $a;
+                break;
+            }
+            if (!$needs_phar && str_starts_with($name, "{$this->program_name}-{$os}-{$arch}.")) {
+                $asset = $a;
+                break;
+            }
+        }
+        if (!$asset) {
+            $term->println("<red>No suitable download found for your platform.</red>");
+            return;
+        }
+        $url = $asset['browser_download_url'];
+        $term->println("Start download: {$url}");
+        $temp_file = tempnam(sys_get_temp_dir(), 'upgrade_');
+        if (!$this->download_file($url, $temp_file)) {
+            $term->println("<red>Failed to download file.</red>");
+            return;
+        }
+        if (str_ends_with($asset['name'], '.phar')) {
+            if (!rename($temp_file, $this->destination)) {
+                $term->println("<red>Failed to replace file.</red>");
+                unlink($temp_file);
+                return;
+            }
+        } else {
+            // extract
+            $temp_dir = sys_get_temp_dir() . '/upgrade_extract_' . uniqid();
+            mkdir($temp_dir);
+            if (str_ends_with($asset['name'], '.zip')) {
+                exec("unzip -q \"$temp_file\" -d \"$temp_dir\"", $output, $code);
+            } elseif (str_ends_with($asset['name'], '.tar.gz')) {
+
+                $cmd = "tar -x -z -f $temp_file -C $temp_dir";
+                $term->println($cmd);
+                exec($cmd, $output, $code);
+            } else {
+                $term->println("<red>Unsupported archive format.</red>");
+                unlink($temp_file);
+                rmdir($temp_dir);
+                return;
+            }
+            if ($code !== 0) {
+                $term->println("<red>Failed to extract archive.</red>");
+                unlink($temp_file);
+                $this->rmdir_recursive($temp_dir);
+                return;
+            }
+            // find the binary
+            $files = glob("$temp_dir/*");
+            $binary = null;
+            foreach ($files as $f) {
+                if (is_file($f) && basename($f) === $this->program_name) {
+                    $binary = $f;
+                    break;
+                }
+            }
+            if (!$binary && count($files) === 1 && is_file($files[0])) {
+                $binary = $files[0];
+            }
+            if (!$binary) {
+                $term->println("<red>Could not find binary in archive.</red>");
+                // unlink($temp_file);
+                // $this->rmdir_recursive($temp_dir);
+                return;
+            }
+            $term->println("copy from $binary to {$this->destination}");
+            if (!rename($binary, $this->destination)) {
+                $term->println("<red>Failed to replace binary.</red>");
+                unlink($temp_file);
+                $this->rmdir_recursive($temp_dir);
+                return;
+            }
+            if (PHP_OS_FAMILY !== 'Windows') {
+                chmod($this->destination, 0755);
+            }
+            // $this->rmdir_recursive($temp_dir);
+        }
+        // unlink($temp_file);
+        $term->println("<green>Successfully upgraded to {$release['tag_name']}</green>");
+        if ($os == "macos") {
+            $term->println("xattr -dr com.apple.quarantine {$this->destination}");
+        }
+    }
+
+    private function get_platform(): array {
+        $os = match (PHP_OS_FAMILY) {
+            'Linux' => 'linux',
+            'Darwin' => 'macos',
+            'Windows' => 'win',
+            default => throw new \Exception("Unsupported OS: " . PHP_OS_FAMILY)
+        };
+        $arch = php_uname('m');
+        if (str_contains($arch, 'arm64') || str_contains($arch, 'aarch64')) {
+            $arch = 'aarch64';
+        } else {
+            $arch = 'x86_64';
+        }
+        return [$os, $arch];
+    }
+
+    private function download_file(string $url, string $dest): bool {
+        $fp = fopen($dest, 'w');
+        if (!$fp) return false;
+        if (function_exists('curl_init')) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_FILE, $fp);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'final-cli-upgrade');
+            curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+            $result = curl_exec($ch);
+        } else {
+            $data = $this->http_get($url);
+            if ($data === false) {
+                fclose($fp);
+                return false;
+            }
+            fwrite($fp, $data);
+            $result = true;
+        }
+        fclose($fp);
+        return $result !== false;
+    }
+
+    private function rmdir_recursive(string $dir): void {
+        if (!is_dir($dir)) return;
+        $files = array_diff(scandir($dir), ['.', '..']);
+        foreach ($files as $file) {
+            $path = "$dir/$file";
+            if (is_dir($path)) {
+                $this->rmdir_recursive($path);
+            } else {
+                unlink($path);
+            }
+        }
+        rmdir($dir);
     }
 }
