@@ -133,7 +133,7 @@ class app {
 
     static public function get_os() {
         $os = strtolower(php_uname("s"));
-        if (str_starts_with($os, "win")) return "windows";
+        if (str_starts_with($os, "win")) return "win";
         if (str_starts_with($os, "darwin")) return "macos";
         return "linux";
     }
