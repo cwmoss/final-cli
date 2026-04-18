@@ -22,7 +22,7 @@ class app {
     static public int $verbose = 0;
 
     public function __construct(
-        public string $name = 'a cli app',
+        public string $name = 'a-cli-app',
         public string $version = "1.0",
         public ?string $tag = null,
         public int $indent = 2
@@ -152,7 +152,7 @@ class app {
 
     public function add_upgrade_command(string $github_project) {
         if (!self::is_upgradeable()) return $this;
-        $up = new upgrade($this->version, $github_project, self::get_self());
+        $up = new upgrade($this->name, $this->version, $github_project, self::get_self());
         return $this->add_command($up, "upgrade");
     }
 

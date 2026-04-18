@@ -32,6 +32,7 @@ namespace cwmoss\final_cli;
 class upgrade {
 
     public function __construct(
+        public string $program_name,
         public string $current_version,
         public string $github_project = "",
         public string $destination = ""
