@@ -103,7 +103,32 @@ class app {
         return $this;
     }
 
-    public function add_command(string|Closure $class, string $name = "", bool $is_default = false, ?string $alias = null) {
+    public function get_version(): string {
+        $v = $this->version;
+        if (php_sapi_name() == "micro") {
+            $v .= " " . self::get_os() . "/" . self::get_arch();
+            $v .= " " . self::get_self();
+        }
+        return $v;
+    }
+
+    static public function get_self() {
+        return $_SERVER["_"];
+    }
+
+    static public function get_arch(): string {
+        $arch = php_uname("m");
+        return $arch;
+    }
+
+    static public function get_os() {
+        $os = strtolower(php_uname("s"));
+        if (str_starts_with($os, "win")) return "windows";
+        if (str_starts_with($os, "darwin")) return "macos";
+        return "linux";
+    }
+
+    public function add_command(string|object $class, string $name = "", bool $is_default = false, ?string $alias = null) {
         $cmd = new command($class, $name, $alias);
         if ($is_default) {
             if ($this->default_command) {
@@ -115,6 +140,10 @@ class app {
         return $this;
     }
 
+    public function add_upgrade_command(string $github_project) {
+        $up = new upgrade($this->version, $github_project);
+        return $this->add_command($up, "upgrade");
+    }
     public function no_help_when_empty() {
         $this->help_when_empty = false;
         return $this;
@@ -131,7 +160,7 @@ class app {
     }
     public function help() {
         $terminal = new terminal();
-        $terminal->println($this->tag() . ' ' . $this->version);
+        $terminal->println($this->tag() . ' ' . $this->get_version());
         $terminal->println();
         $terminal->println($this->short, $this->indent);
         $terminal->println($this->long, $this->indent);

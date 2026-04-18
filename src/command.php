@@ -23,7 +23,7 @@ class command {
     public string $help_long = "";
     public Closure|array $call;
 
-    public function __construct(public string|Closure $command, public ?string $name = null, public ?string $alias = null) {
+    public function __construct(public string|object $command, public ?string $name = null, public ?string $alias = null) {
         if (!$name && is_string($command)) {
             $n = explode('\\', $command);
             $this->name = array_pop($n);
@@ -92,7 +92,7 @@ class command {
         return $this->name;
     }
     // TODO: support callable as $class
-    public function inspect(string|Closure $class) {
+    public function inspect(string|object $class) {
         if (is_string($class)) {
             if (function_exists($class)) {
                 $this->call = $class(...);
@@ -104,10 +104,14 @@ class command {
                 // $this->call = fn (...$args) => (new $class)->$method(...$args);
                 $rflc = new ReflectionMethod($class, $method);
             }
-        } else {
+        } elseif ($class instanceof Closure) {
             // closure
             $this->call = $class;
             $rflc = new ReflectionFunction($class);
+        } else {
+            // object
+            $this->call = $class(...);
+            $rflc = new ReflectionMethod($class, "__invoke");
         }
 
         $parameters = $rflc->getParameters();
