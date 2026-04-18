@@ -2,6 +2,8 @@
 
 namespace cwmoss\final_cli;
 
+use PharData;
+
 class unzip {
 
 
@@ -9,5 +11,11 @@ class unzip {
     }
 
     public function extract() {
+    }
+
+    public function extract_with_phar(string $dest_dir): bool {
+        $p = new PharData($this->archive_file)->decompress()
+            ->extractTo($dest_dir);
+        return true;
     }
 }
