@@ -79,9 +79,9 @@ class upgrade {
         $term = new terminal;
         $term->println("Current version: {$this->current_version}");
         $term->println("New version: {$release['tag_name']}");
-        [$os, $arch] = $this->get_platform();
+        [$os, $arch] = util::get_platform();
         $asset = null;
-        $needs_phar = str_ends_with($this->destination, ".phar");
+        $needs_phar = util::is_hosted_phar();
         foreach ($release['assets'] as $a) {
             $name = $a['name'];
             if ($needs_phar && $name === "{$this->program_name}.phar") {
@@ -168,22 +168,6 @@ class upgrade {
         if ($os == "macos") {
             $term->println("xattr -dr com.apple.quarantine {$this->destination}");
         }
-    }
-
-    private function get_platform(): array {
-        $os = match (PHP_OS_FAMILY) {
-            'Linux' => 'linux',
-            'Darwin' => 'macos',
-            'Windows' => 'win',
-            default => throw new \Exception("Unsupported OS: " . PHP_OS_FAMILY)
-        };
-        $arch = php_uname('m');
-        if (str_contains($arch, 'arm64') || str_contains($arch, 'aarch64')) {
-            $arch = 'aarch64';
-        } else {
-            $arch = 'x86_64';
-        }
-        return [$os, $arch];
     }
 
 

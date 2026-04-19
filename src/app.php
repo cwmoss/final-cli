@@ -107,35 +107,14 @@ class app {
     public function get_version(): string {
         $v = $this->version;
         if (self::is_upgradeable()) {
-            $v .= " " . self::get_os() . "/" . self::get_arch();
-            $v .= " " . self::get_self();
+            $v .= " " . join("/", util::get_platform());
+            $v .= " " . util::get_self();
         }
         return $v;
     }
 
     static public function is_upgradeable(): bool {
-        return php_sapi_name() == "micro" || self::is_phar();
-    }
-
-    static public function is_phar(): bool {
-        return method_exists(Phar::class, "running") && Phar::running(false) !== "";
-    }
-
-    static public function get_self(): string {
-        if (self::is_phar()) return Phar::running(false);
-        return $_SERVER["_"];
-    }
-
-    static public function get_arch(): string {
-        $arch = php_uname("m");
-        return $arch;
-    }
-
-    static public function get_os() {
-        $os = strtolower(php_uname("s"));
-        if (str_starts_with($os, "win")) return "win";
-        if (str_starts_with($os, "darwin")) return "macos";
-        return "linux";
+        return php_sapi_name() == "micro" || util::is_phar();
     }
 
     public function add_command(string|object $class, string $name = "", bool $is_default = false, ?string $alias = null) {
