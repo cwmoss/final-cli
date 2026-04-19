@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace cwmoss\final_cli;
 
 use PHPUnit\Framework\MockObject\Rule\Parameters;
@@ -56,7 +58,7 @@ class command {
                 }
             } else {
                 $val = $parser->get_opt($parm->long_option_name, $parm->short_option_name);
-                // TODO: array
+                // TODO: @rw array
                 if (is_null($val)) {
                     if ($parm->is_optional) {
                         $val = $parm->default;
@@ -91,7 +93,7 @@ class command {
     public function name() {
         return $this->name;
     }
-    // TODO: support callable as $class
+    // TODO: @rw support callable as $class
     public function inspect(string|object $class) {
         if (is_string($class)) {
             if (function_exists($class)) {
@@ -128,7 +130,7 @@ class command {
 
     public function get_doc(ReflectionFunctionAbstract $rflc) {
         $comment = $rflc->getDocComment();
-
+        if (!$comment) return;
         [$this->help_short, $this->help_long] = app::get_description_from_phpdoc($comment);
     }
 }

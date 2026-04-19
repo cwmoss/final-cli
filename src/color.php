@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
 
 https://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences

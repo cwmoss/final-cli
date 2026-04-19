@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace cwmoss\final_cli;
 
 use Closure;
@@ -223,6 +225,9 @@ class app {
 
     public function fetch_description() {
         $comment = self::get_first_file_comment_block($this->caller['file']);
+        if (!$comment) {
+            return;
+        }
         [$this->short, $this->long] = self::get_description_from_phpdoc($comment);
     }
 
@@ -235,7 +240,7 @@ class app {
         }
     }
 
-    public static function get_description_from_phpdoc($comment) {
+    public static function get_description_from_phpdoc(string $comment) {
         $comment = substr($comment, 3, -2);
         # $lines = array_map(fn ($line) => ltrim("\r\t", $line), explode("\n", $comment));
 

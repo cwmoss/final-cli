@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace cwmoss\final_cli;
 
 class parser {
@@ -36,12 +38,12 @@ class parser {
                 continue;
             }
 
-            if ($token == "--") {
+            if ($token === "--") {
                 $only_args_left = true;
                 continue;
             }
 
-            if ($token == "-") {
+            if ($token === "-") {
                 $this->args[] = $token;
                 continue;
             }
@@ -58,7 +60,7 @@ class parser {
                 $this->args[] = $token;
             }
         }
-        if (count($commands) == 1) {
+        if (count($commands) === 1) {
             $this->command = $commands[0];
         } else {
             if ($this->args) {
