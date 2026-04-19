@@ -9,7 +9,7 @@ use Throwable;
 
 class error extends Exception {
 
-    static public function nice_output(Throwable $e, bool $with_trace = true) {
+    static public function nice_output(Throwable $e, bool $with_trace = true): string {
         $trace = "";
         if ($with_trace) {
             $trace = $e->getTraceAsString() . "\n";

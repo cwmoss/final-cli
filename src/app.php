@@ -11,10 +11,17 @@ use Throwable;
 
 class app {
 
+    /**
+     * @var command[] $commands
+     */
     public array $commands;
+    /**
+     * @var string[] $command_names
+     */
     public array $command_names;
     public ?command $default_command = null;
-    public array $caller;
+
+    public string $caller_file;
     public string $short = "";
     public string $long = "";
     public bool $help_when_empty = true;
@@ -29,20 +36,31 @@ class app {
         public ?string $tag = null,
         public int $indent = 2
     ) {
+        // xxmago-ignore analysis:less-specific-argument
         $this->get_called_file(debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS, 3));
         $this->fetch_description();
     }
 
-    public function run(array $argv, Closure|ContainerInterface|null $resolver = null) {
+    /**
+     * @param string[] $argv
+     * 
+     * @mago-ignore analysis:non-existent-class-like
+     */
+    public function run(
+        array $argv,
+        Closure|ContainerInterface|null $resolver = null /* @phpstan-ignore class.notFound */
+    ): void {
         $this->finalize();
         $parser = new parser($argv, $this->command_names);
         if ($this->help_when_empty && $parser->called_with_empty_args()) {
-            return $this->help();
+            $this->help();
+            return;
         }
         // print_r($this);
         $help = $parser->get_switch('h', 'help');
         if ($help && !$parser->command) {
-            return $this->help();
+            $this->help();
+            return;
         }
         self::$verbose = (int) $parser->get_switch('v', 'verbose');
         try {
@@ -54,9 +72,13 @@ class app {
                 if (is_array($call)) {
                     [$cls, $mth] = $call;
                     if ($resolver) {
-                        if ($resolver instanceof ContainerInterface) {
-                            $obj = $resolver->get($cls);
+
+                        // @mago-ignore analyzer:non-existent-class-like
+                        if ($resolver instanceof ContainerInterface /* @phpstan-ignore class.notFound */) {
+                            // @mago-ignore analysis:non-existent-class-like,non-existent-method
+                            $obj = $resolver->get($cls); /* @phpstan-ignore class.notFound */
                         } else {
+                            // @mago-ignore analysis:invalid-callable
                             $obj = $resolver($cls, $parser);
                         }
                     } else {
@@ -64,11 +86,12 @@ class app {
                     }
                     $call = [$obj, $mth];
                 }
+                // @mago-ignore analyzer:invalid-callable
                 ($call)(...$args);
             }
         } catch (error $e) {
             print "⚠️  problem: " . $e->getMessage() . "\n";
-            print error::nice_output($e, self::$verbose);
+            print error::nice_output($e, (bool) self::$verbose);
             // if (self::$verbose) print_r($cmd->parameters);
         } catch (Throwable $e) {
             print "⚠️  application problem: " . $e->getMessage() . "\n";
@@ -76,7 +99,7 @@ class app {
         }
     }
 
-    public function finalize() {
+    public function finalize(): void {
         $total = sizeof($this->commands);
         if (!$total) throw new error("missing command definition");
         if ($total == 1) {
@@ -90,7 +113,7 @@ class app {
         }
     }
 
-    public function match($parser): command {
+    public function match(parser $parser): command {
         if (!$parser->command) {
             if ($this->default_command) return $this->default_command;
             throw new error("missing command");
@@ -101,7 +124,7 @@ class app {
         throw new error("command not found ({$parser->command})");
     }
 
-    public function version(string $version) {
+    public function version(string $version): static {
         $this->version = $version;
         return $this;
     }
@@ -119,11 +142,16 @@ class app {
         return php_sapi_name() == "micro" || util::is_phar();
     }
 
-    public function add_command(string|object $class, string $name = "", bool $is_default = false, ?string $alias = null) {
+    public function add_command(
+        string|object $class,
+        string $name = "",
+        bool $is_default = false,
+        ?string $alias = null
+    ): static {
         $cmd = new command($class, $name, $alias);
         if ($is_default) {
             if ($this->default_command) {
-                throw new error("can't define $cmd->name as custom command, because there is already one definde: $this->default_command->name");
+                throw new error("can't define $cmd->name as custom command, because there is already one definde: {$this->default_command->name}");
             }
             $this->default_command = $cmd;
         }
@@ -131,18 +159,18 @@ class app {
         return $this;
     }
 
-    public function add_upgrade_command(string $github_project) {
+    public function add_upgrade_command(string $github_project): static {
         if (!self::is_upgradeable()) return $this;
-        $up = new upgrade($this->name, $this->version, $github_project, self::get_self());
+        $up = new upgrade($this->name, $this->version, $github_project, util::get_self());
         return $this->add_command($up, "upgrade");
     }
 
-    public function no_help_when_empty() {
+    public function no_help_when_empty(): static {
         $this->help_when_empty = false;
         return $this;
     }
 
-    public function debug() {
+    public function debug(): static {
         $this->debug = true;
         return $this;
     }
@@ -151,7 +179,8 @@ class app {
         if ($this->tag) return $this->tag;
         return "<inv><b> " . $this->name . " </b></inv>";
     }
-    public function help() {
+
+    public function help(): void {
         $terminal = new terminal();
         $terminal->println($this->tag() . ' ' . $this->get_version());
         $terminal->println();
@@ -172,7 +201,7 @@ class app {
         // terminal::println("<blink>now you choose</blink>");
     }
 
-    public function help_command(command $command) {
+    public function help_command(command $command): void {
         $terminal = new terminal();
         $terminal->println($this->tag() . ' ' . $this->version);
         $terminal->println();
@@ -187,7 +216,7 @@ class app {
         $terminal->println();
     }
 
-    public function help_command_parameters(command $command) {
+    public function help_command_parameters(command $command): void {
         $terminal = new terminal();
         $pos = $named = [];
         foreach ($command->parameters as $para) {
@@ -219,52 +248,61 @@ class app {
         }
     }
 
-    public function help_enum(enum_type $et, string $type) {
+    public function help_enum(enum_type $et, string $type): string {
         return join("|", $et->cases_as_strings($type));
     }
 
-    public function fetch_description() {
-        $comment = self::get_first_file_comment_block($this->caller['file']);
+    public function fetch_description(): void {
+        $comment = self::get_first_file_comment_block($this->caller_file);
         if (!$comment) {
             return;
         }
         [$this->short, $this->long] = self::get_description_from_phpdoc($comment);
     }
 
-    public function get_called_file(array $trace) {
+    /**
+     * param list<array<string, int|list<mixed>|object|string>> $trace
+     */
+    public function get_called_file(array $trace): void {
         foreach ($trace as $entry) {
-            if ($entry['file'] != __FILE__) {
-                $this->caller = $entry;
+            $file = (string)($entry['file'] ?? "");
+            if ($file != __FILE__) {
+                $this->caller_file = $file;
                 return;
             }
         }
     }
 
-    public static function get_description_from_phpdoc(string $comment) {
+    /**
+     * @return string[]
+     */
+    public static function get_description_from_phpdoc(string $comment): array {
         $comment = substr($comment, 3, -2);
         # $lines = array_map(fn ($line) => ltrim("\r\t", $line), explode("\n", $comment));
 
         $comment = trim(join("\n", array_map(fn($line) => trim($line, "* \n\r\t\v\0"), explode("\n", $comment))));
         [$short, $long] = explode("\n\n", $comment, 2) + [1 => ""];
         // if first line ends with a . (dot) then it is the short description
+        $short = (string) $short;
         $shortlines = explode("\n", $short);
         if (str_ends_with($shortlines[0], '.')) {
             $short = rtrim($shortlines[0], '.');
             array_shift($shortlines);
             $long = trim(join("\n", $shortlines) . "\n" . $long);
         }
+        // @xmago-ignore analyzer:invalid-return-statement
         return [$short, $long];
     }
 
-    public static function get_first_file_comment_block($file_name) {
-        $Comments = array_filter(
-            token_get_all(file_get_contents($file_name)),
+    public static function get_first_file_comment_block(string $file_name): string {
+        $comments = array_filter(
+            token_get_all(file_get_contents($file_name) ?: ""),
             function ($entry) {
                 return $entry[0] == T_DOC_COMMENT;
             }
         );
 
-        $fileComment = array_shift($Comments);
-        return $fileComment[1];
+        $fileComment = array_shift($comments);
+        return $fileComment[1] ?? "";
     }
 }

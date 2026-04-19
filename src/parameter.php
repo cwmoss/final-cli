@@ -8,6 +8,8 @@ namespace cwmoss\final_cli;
 https://gist.github.com/mindplay-dk/082458088988e32256a827f9b7491e17
 */
 
+use Error;
+use ReflectionNamedType;
 use ReflectionParameter;
 
 class parameter {
@@ -16,7 +18,7 @@ class parameter {
     public string $pname;
     public ?string $short_option_name = null;
     public ?string $long_option_name = null;
-    public ?string $type;
+    public string $type;
     public ?string $description = null;
     public int $position;
     public mixed $default;
@@ -34,14 +36,18 @@ class parameter {
         $this->fetch($parameter);
     }
 
-    public function fetch(ReflectionParameter $parameter) {
+    public function fetch(ReflectionParameter $parameter): void {
         if ($parameter->isDefaultValueAvailable()) $this->default = $parameter->getDefaultValue();
         else $this->default = null;
 
         $this->name = $parameter->getName();
         $this->pname = self::get_parameter_name($this->name);
         $this->position = $parameter->getPosition();
-        $this->type = $parameter->getType()?->getName();
+        $type = $parameter->getType();
+        if ($type && !$type instanceof ReflectionNamedType) {
+            throw new Error("union types and intersection types are currently not supported.");
+        }
+        $this->type = $type?->getName() ?? "";
 
         $this->is_optional = $parameter->isOptional();
         $this->is_variadic = $parameter->isVariadic();
@@ -83,19 +89,19 @@ class parameter {
         # if (!$this->is_optional) $this->default = $parameter->getDefaultValue();
     }
 
-    public static function get_parameter_name($name) {
+    public static function get_parameter_name(string $name): string {
         $name = ltrim($name, '_');
         $name = strtr($name, '_', '-');
         return $name;
     }
 
-    public function get_attributes($parameter): ?cli {
+    public function get_attributes(ReflectionParameter $parameter): ?cli {
         $attrs = $parameter->getAttributes();
         foreach ($attrs as $attr) {
-            if (!str_starts_with($attr->getName(), 'cwmoss\\final_cli')) continue;
-            // print $attr->getName();
-            $a = $attr->newInstance();
-            return $a;
+            // if (!str_starts_with($attr->getName(), 'cwmoss\\final_cli')) continue;
+            if ($attr->getName() == cli::class)
+                // @mago-ignore analyzer:less-specific-return-statement
+                return $attr->newInstance();
             // $a->set($this);
         }
         return null;

@@ -23,7 +23,7 @@ class cli {
         $this->parse_definition();
     }
 
-    public function parse_definition() {
+    public function parse_definition(): void {
         if (!$this->definition) return;
         foreach (explode(" ", $this->definition) as $def) {
             if (!$def) continue;

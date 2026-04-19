@@ -8,7 +8,7 @@ use RuntimeException;
 
 class input {
 
-    static public function readline($prompt = '') {
+    static public function readline(string $prompt = ''): string {
         $prompt && print $prompt;
         // $terminal_device = '/dev/tty';
         $terminal_device = 'php://stdin';
@@ -17,7 +17,11 @@ class input {
         if ($h === false) {
             throw new RuntimeException("Failed to open terminal device $terminal_device");
         }
-        $line = rtrim(fgets($h), "\r\n");
+        $line = fgets($h);
+        if ($line === false) {
+            throw new RuntimeException("Failed to read terminal device $terminal_device");
+        }
+        $line = rtrim($line, "\r\n");
         fclose($h);
         return $line;
     }

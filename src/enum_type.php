@@ -29,15 +29,22 @@ enum enum_type {
     }
 
     public function from_input_string(string $type, string $input): BackedEnum|UnitEnum {
+        // @mago-ignore analyzer:mixed-return-statement
         return match ($this) {
             self::unit => new ReflectionEnum($type)->getCase($input),
             self::backed => $type::from($input)
         };
     }
 
+    /**
+     * @return string[]
+     */
     public function cases_as_strings(string $class): array {
         return array_map(
-            fn(BackedEnum|UnitEnum $case) => $this == self::backed ? $case->value : $case->name,
+            // $this == self::backed ? $case->value : $case->name
+            // @mago-ignore analysis:non-existent-property 
+            fn(BackedEnum|UnitEnum $case) => (string) ($case->value ?? $case->name),
+            // @mago-ignore analysis:mixed-argument
             $class::cases(),
         );
     }

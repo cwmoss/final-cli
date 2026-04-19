@@ -8,6 +8,9 @@ use Phar;
 
 class util {
 
+    /**
+     * @return string[]
+     */
     static function get_platform(): array {
         $os = match (PHP_OS_FAMILY) {
             'Linux' => 'linux',
@@ -26,7 +29,7 @@ class util {
 
     // this programm is running as a phar archive
     static public function is_phar(): bool {
-        return method_exists(Phar::class, "running") && Phar::running(false) !== "";
+        return class_exists(Phar::class) && Phar::running(false) !== "";
     }
 
     // this programm is running as a normal hosted phar archive
@@ -40,7 +43,7 @@ class util {
     }
 
     static function home_dir(): string {
-        $result = $_SERVER['HOME'] ?? getenv("HOME") ?? "";
+        $result = $_SERVER['HOME'] ?? ((string)getenv("HOME"));
 
         if ($result === "" && function_exists('exec')) {
             if (strncasecmp(PHP_OS, 'WIN', 3) === 0) {
@@ -57,25 +60,26 @@ class util {
         return $_SERVER['EDITOR'] ?? getenv("EDITOR") ?: "vim";
     }
 
-    static function call_ed(string $filename) {
+    static function call_ed(string $filename): void {
         $cmd = sprintf("%s %s > `tty`", self::editor(), $filename);
         system($cmd);
     }
 
-    static function human_filesize($bytes, $decimals = 2) {
-        $factor = floor((strlen($bytes) - 1) / 3);
-        if ($factor > 0) $sz = 'KMGT';
-        return sprintf("%.{$decimals}f %sB", $bytes / pow(1024, $factor), $sz[$factor - 1] ?? "");
+    static function human_filesize(int $bytes, int $decimals = 2): string {
+        $factor = (int)floor((strlen((string)$bytes) - 1) / 3);
+        $size = "";
+        if ($factor > 0 && $factor < 4) $size = 'KMGT'[$factor - 1];
+        return sprintf("%.{$decimals}f %sB", $bytes / pow(1024, $factor), $size);
     }
 
-    static function load_dot_env_file($env_file, $silent = true): bool {
+    static function load_dot_env_file(string $env_file, bool $silent = true): bool {
 
         if (!is_readable($env_file)) {
             if ($silent) return false;
             throw new \RuntimeException(sprintf('%s .env file is not readable', $env_file));
         }
 
-        $lines = file($env_file);
+        $lines = file($env_file) ?: [];
         foreach ($lines as $line) {
             $line = trim($line);
             if (!$line) continue;

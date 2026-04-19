@@ -10,17 +10,30 @@ class parser {
     public string $command = "";
 
     // $ miggi migrate --yes
+    /**
+     * @var array<string, bool> $switches
+     */
     public array $switches = [];
 
     // $ miggi --dir=db/migrations
+    /**
+     * @var array<string, string> $opts
+     */
     public array $opts = [];
 
     // $ miggi new create_todos_tables
+    /**
+     * @var string[] $args
+     */
     public array $args = [];
 
     // bin/miggi.php
     public string $script = "";
 
+    /**
+     * @param string[] $args
+     * @param string[] $commands
+     */
     public function __construct(array $args, array $commands = []) {
         $this->script = array_shift($args);
         $this->parse($args, $commands);
@@ -30,7 +43,11 @@ class parser {
         return (!$this->command && !$this->args && !$this->opts && !$this->switches);
     }
 
-    public function parse(array $args, array $commands = []) {
+    /**
+     * @param string[] $args
+     * @param string[] $commands
+     */
+    public function parse(array $args, array $commands = []): void {
         $only_args_left = false;
         foreach ($args as $token) {
             if ($only_args_left) {
@@ -69,7 +86,10 @@ class parser {
         }
     }
 
-    function get_opt(...$tests) {
+    /**
+     * @param null|string $tests
+     */
+    function get_opt(...$tests): ?string {
         // print_r($tests);
         foreach ($tests as $t) {
             if ($t === null) continue;
@@ -78,7 +98,10 @@ class parser {
         return null;
     }
 
-    function get_switch(...$tests) {
+    /**
+     * @param null|string $tests
+     */
+    function get_switch(...$tests): bool {
         // print_r($tests);
         foreach ($tests as $t) {
             if ($t === null) continue;

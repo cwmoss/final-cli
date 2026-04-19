@@ -43,3 +43,5 @@ strict-list-index-checks = false
 no-boolean-literal-comparison = false
 check-missing-type-hints = false
 register-super-globals = true
+# explode(..) + [1=>xxx]
+ignore = ["undefined-string-array-index", "unknown-class-instantiation"]

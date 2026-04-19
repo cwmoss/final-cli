@@ -12,20 +12,26 @@ use Closure;
 
 class command {
 
-    public array $flags = [];
+    /**
+     * @var string[] $opts
+     */
     public array $opts = [];
+    /**
+     * @var string[] $args
+     */
     public array $args = [];
 
     /**
-     * @param array<parameter> $parameters
+     * @var parameter[] $parameters
      */
     public array $parameters = [];
 
     public string $help_short = "";
     public string $help_long = "";
+
     public Closure|array $call;
 
-    public function __construct(public string|object $command, public ?string $name = null, public ?string $alias = null) {
+    public function __construct(public string|object $command, public string $name = "", public ?string $alias = null) {
         if (!$name && is_string($command)) {
             $n = explode('\\', $command);
             $this->name = array_pop($n);
@@ -33,7 +39,7 @@ class command {
         $this->inspect($command);
     }
 
-    public function match(string $name) {
+    public function match(string $name): bool {
         return $this->name == $name || ($this->alias && $this->alias == $name);
     }
 
@@ -45,8 +51,9 @@ class command {
             if ($parm->is_switch) {
                 $val = $parser->get_switch($parm->long_option_name, $parm->short_option_name);
             } elseif ($parm->is_positional) {
-                if ($parm->type == "array") $val = $parser->args;
-                else {
+                if ($parm->type == "array") {
+                    $val = $parser->args;
+                } else {
                     $val = array_shift($parser->args);
                     if ($val === null && !$parm->is_optional) {
                         throw new error("missing argument: {$pname}");
@@ -81,30 +88,31 @@ class command {
         $type = $parm->type;
         $et = enum_type::is_enum($type);
         if ($et) {
-            return $et->from_input_string($type, $val);
+            return $et->from_input_string((string)$type, $val);
         }
+        // var_dump($type);
         return match ($type) {
-            null, "string" => $val,
+            "", "string" => $val,
             "int" => intval($val),
             "float" => floatval($val),
             default => new $type($val)
         };
     }
-    public function name() {
-        return $this->name;
+    public function name(): string {
+        return $this->name ?: "";
     }
     // TODO: @rw support callable as $class
-    public function inspect(string|object $class) {
+    public function inspect(string|object $class): void {
         if (is_string($class)) {
             if (function_exists($class)) {
                 $this->call = $class(...);
                 $rflc = new ReflectionFunction($class);
             } else {
                 // class name
-                [$class, $method] = explode("@", $class) + [1 => "__invoke"];
+                [$class, $method] = (explode("@", $class)) + [1 => "__invoke"];
                 $this->call = [$class, $method];
                 // $this->call = fn (...$args) => (new $class)->$method(...$args);
-                $rflc = new ReflectionMethod($class, $method);
+                $rflc = new ReflectionMethod((string)$class, $method);
             }
         } elseif ($class instanceof Closure) {
             // closure
@@ -112,6 +120,7 @@ class command {
             $rflc = new ReflectionFunction($class);
         } else {
             // object
+            // @mago-ignore analysis:invalid-callable
             $this->call = $class(...);
             $rflc = new ReflectionMethod($class, "__invoke");
         }
@@ -128,7 +137,7 @@ class command {
         $this->get_doc($rflc);
     }
 
-    public function get_doc(ReflectionFunctionAbstract $rflc) {
+    public function get_doc(ReflectionFunctionAbstract $rflc): void {
         $comment = $rflc->getDocComment();
         if (!$comment) return;
         [$this->help_short, $this->help_long] = app::get_description_from_phpdoc($comment);

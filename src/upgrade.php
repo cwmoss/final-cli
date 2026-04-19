@@ -44,7 +44,7 @@ class upgrade {
     /**
      * upgrade from github to latest version.
      */
-    public function __invoke() {
+    public function __invoke(): void {
         $term = new terminal;
         $term->println("checking for new version");
         $new_version = $this->check_version();
@@ -55,12 +55,15 @@ class upgrade {
         $this->download_and_replace($new_version);
     }
 
+    /**
+     * @return false|array <string,string>
+     */
     public function check_version(): false|array {
         $release = $this->fetch_recent_version();
         if (!$release) {
             return false;
         }
-        $latest_version = ltrim($release['tag_name'], 'v');
+        $latest_version = ltrim((string)$release['tag_name'], 'v');
         $current = ltrim($this->current_version, 'v');
         if (version_compare($latest_version, $current, '>')) {
             return $release;
@@ -68,30 +71,33 @@ class upgrade {
         return false;
     }
 
-    public function fetch_recent_version() {
+    public function fetch_recent_version(): false|array {
         $url = "https://api.github.com/repos/{$this->github_project}/releases/latest";
         $data = new fetch()->get($url);
         if (!$data) {
             return false;
         }
+        // @mago-ignore analyzer:mixed-return-statement
         return json_decode($data, true);
     }
 
-    public function download_and_replace(array $release) {
+    public function download_and_replace(array $release): void {
         $term = new terminal;
         $term->println("Current version: {$this->current_version}");
         $term->println("New version: {$release['tag_name']}");
         [$os, $arch] = util::get_platform();
         $asset = null;
         $needs_phar = util::is_hosted_phar();
-        foreach ($release['assets'] as $a) {
-            $name = $a['name'];
+        // @var array <string,string> $a
+        foreach ((array)$release['assets'] as $a) {
+            if (!is_array($a)) continue;
+            $name = (string) $a['name'];
             if ($needs_phar && $name === "{$this->program_name}.phar") {
-                $asset = $a;
+                $asset = (array)$a;
                 break;
             }
             if (!$needs_phar && str_starts_with($name, "{$this->program_name}-{$os}-{$arch}.")) {
-                $asset = $a;
+                $asset = (array)$a;
                 break;
             }
         }
@@ -99,44 +105,32 @@ class upgrade {
             $term->println("<red>No suitable download found for your platform.</red>");
             return;
         }
-        $url = $asset['browser_download_url'];
+        $url = (string)($asset['browser_download_url'] ?? "");
+        $asset_name = (string)($asset['name'] ?? "");
         $term->println("Start download: {$url}");
-        $temp_file = tempnam(sys_get_temp_dir(), 'upgrade_');
+        $temp_file = file::new_tempfile(prefix: 'upgrade_');
+
         if (!new fetch()->download_file($url, $temp_file)) {
             $term->println("<red>Failed to download file.</red>");
             return;
         }
-        if (str_ends_with($asset['name'], '.phar')) {
-            if (!rename($temp_file, $this->destination)) {
+        if (str_ends_with($asset_name, '.phar')) {
+            if (!rename($temp_file->fname, $this->destination)) {
                 $term->println("<red>Failed to replace file.</red>");
-                unlink($temp_file);
                 return;
             }
         } else {
             // extract
-            $temp_dir = sys_get_temp_dir() . '/upgrade_extract_' . uniqid();
-            mkdir($temp_dir);
-            if (str_ends_with($asset['name'], '.zip')) {
-                exec("unzip -q \"$temp_file\" -d \"$temp_dir\"", $output, $code);
-            } elseif (str_ends_with($asset['name'], '.tar.gz')) {
+            $zip = new unzip($temp_file, str_ends_with($asset_name, '.zip') ? "zip" : "tgz")
+                ->extract();
 
-                $cmd = "tar -x -z -f $temp_file -C $temp_dir";
-                $term->println($cmd);
-                exec($cmd, $output, $code);
-            } else {
-                $term->println("<red>Unsupported archive format.</red>");
-                unlink($temp_file);
-                rmdir($temp_dir);
-                return;
-            }
-            if ($code !== 0) {
-                $term->println("<red>Failed to extract archive.</red>");
-                unlink($temp_file);
-                $this->rmdir_recursive($temp_dir);
-                return;
-            }
+            $temp_dir = $zip->temp_dir;
+
             // find the binary
             $files = glob("$temp_dir/*");
+            if ($files === false) {
+                throw new error("Could not list extracted files.");
+            }
             $binary = null;
             foreach ($files as $f) {
                 if (is_file($f) && basename($f) === $this->program_name) {
@@ -156,34 +150,15 @@ class upgrade {
             $term->println("copy from $binary to {$this->destination}");
             if (!rename($binary, $this->destination)) {
                 $term->println("<red>Failed to replace binary.</red>");
-                unlink($temp_file);
-                $this->rmdir_recursive($temp_dir);
                 return;
             }
-            if (PHP_OS_FAMILY !== 'Windows') {
+            if ($os !== 'win') {
                 chmod($this->destination, 0755);
             }
-            // $this->rmdir_recursive($temp_dir);
         }
-        // unlink($temp_file);
         $term->println("<green>Successfully upgraded to {$release['tag_name']}</green>");
         if ($os == "macos") {
             $term->println("xattr -dr com.apple.quarantine {$this->destination}");
         }
-    }
-
-
-    private function rmdir_recursive(string $dir): void {
-        if (!is_dir($dir)) return;
-        $files = array_diff(scandir($dir), ['.', '..']);
-        foreach ($files as $file) {
-            $path = "$dir/$file";
-            if (is_dir($path)) {
-                $this->rmdir_recursive($path);
-            } else {
-                unlink($path);
-            }
-        }
-        rmdir($dir);
     }
 }

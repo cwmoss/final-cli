@@ -30,50 +30,50 @@ enum color: string {
 
 
 
-    function fg() {
+    function fg(): string {
         return self::ansi($this->value);
     }
-    function bg() {
-        return self::ansi($this->value + 10);
+    function bg(): string {
+        return self::ansi((int)$this->value + 10);
     }
-    function bright() {
+    function bright(): string {
         return self::ansi($this->value . ';1');
     }
-    function short_name() {
+    function short_name(): string {
         return substr($this->name, 0, 3);
     }
-    static function reset() {
+    static function reset(): string {
         return self::ansi(0);
     }
-    static function bold() {
+    static function bold(): string {
         return self::ansi(1);
     }
 
     // 21 doesn't work on mac
-    static function reset_bold() {
+    static function reset_bold(): string {
         return self::ansi(0);
     }
 
-    static function underline() {
+    static function underline(): string {
         return self::ansi(4);
     }
-    static function reset_underline() {
+    static function reset_underline(): string {
         return self::ansi(24);
     }
-    static function inverse() {
+    static function inverse(): string {
         return self::ansi(7);
     }
-    static function reset_inverse() {
+    static function reset_inverse(): string {
         return self::ansi(27);
     }
 
-    static function blink() {
+    static function blink(): string {
         return self::ansi(5);
     }
-    static function reset_blink() {
+    static function reset_blink(): string {
         return self::ansi(25);
     }
-    static function ansi($code) {
+    static function ansi(int|string $code): string {
         return "\e[{$code}m";
     }
 }
