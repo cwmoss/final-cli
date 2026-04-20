@@ -139,7 +139,9 @@ class upgrade {
         $digest = (string)($asset['digest'] ?? "");
         $size = util::human_filesize((int)($asset['size'] ?? 0));
 
-        $term->println("Start download {$size}: {$url}");
+        $term->println("Start download {$asset_name} {$size}");
+        $term->println("  {$url}");
+
         $temp_file = file::new_tempfile(prefix: 'upgrade_');
 
         if (!new fetch(base_headers: $this->auth_headers())->download_file($url, $temp_file)) {
@@ -147,6 +149,7 @@ class upgrade {
             return;
         }
 
+        $term->println("Check digest {$digest}");
         $temp_file->check_digest($digest) or throw new error("digest verification failed.");
 
         if (str_ends_with($asset_name, '.phar')) {
