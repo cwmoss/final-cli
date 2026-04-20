@@ -20,8 +20,7 @@ class file {
     }
 
     static public function new_tempfile(string $basedir = "", string $prefix = "cli-tempfile"): static {
-        $f = tempnam($basedir ?: sys_get_temp_dir(), $prefix);
-        if (!$f) throw new Exception("tempfile creation failed.");
+        $f = tempnam($basedir ?: sys_get_temp_dir(), $prefix) or throw new error("tempfile creation failed.");
         return new static($f)->as_tempfile();
     }
 
@@ -35,10 +34,9 @@ class file {
         [$_, $ext] = explode("/", explode(";", $mime)[0]);
 
         if (!$name) {
-            $tname = tempnam($basedir, "cli-response-");
-            if (!$tname) throw new Exception("tempfile creation failed. $tname => $name");
+            $tname = tempnam($basedir, "cli-response-") or throw new error("tempfile creation failed. $tname => $name");
             $name = $tname . "." . $ext;
-            rename($tname, $name) or throw new Exception("tempfile rename failed. $tname => $name");
+            rename($tname, $name) or throw new error("tempfile rename failed. $tname => $name");
         } else {
             $n_ext = pathinfo($name, PATHINFO_EXTENSION);
             if (!$n_ext) $name .= "." . $ext;
@@ -54,12 +52,10 @@ class file {
         return $this;
     }
     public function must_be_readable(): static {
-        if (!file_exists($this->fname)) {
-            throw new error("file does not exist: $this->name");
-        }
-        if (!is_readable($this->fname)) {
-            throw new error("file is not readable: $this->name");
-        }
+        file_exists($this->fname) or throw new error("file does not exist: $this->name");
+
+        is_readable($this->fname) or throw new error("file is not readable: $this->name");
+
         return $this;
     }
 
@@ -68,10 +64,8 @@ class file {
     }
 
     public function put_contents(mixed $contents): int {
-        $ok = file_put_contents($this->fname, $contents);
-        if ($ok === false) {
+        $ok = file_put_contents($this->fname, $contents) or
             throw new error("could not write to file: $this->fname");
-        }
         return $ok;
     }
 
