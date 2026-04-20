@@ -81,6 +81,14 @@ class file {
         return filesize($this->fname) ?: 0;
     }
 
+    public function check_digest(string $digest): bool {
+        $parts = explode(":", $digest, 2);
+        if (!isset($parts[1])) return false;
+        $hash = hash_file($parts[0], $this->fname);
+        if ($hash === false) return false;
+        return $hash === $parts[1];
+    }
+
     static public function resolve_filename(string $name): string {
         if ($name[0] == '/') return $name;
         if ($name == "-") return "php://stdin";

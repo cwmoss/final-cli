@@ -12,6 +12,14 @@ namespace cwmoss\final_cli;
         
     currently only github projects are supported
     
+    public repos:
+        project: cwmoss/final-cli
+        token: "" 
+
+    private repos:
+        project: https://aoi.xcxcxc.../repos/cwmoss/final-cli
+        token: Fine-grained personal access tokens with repo READ contents permissions
+
     conventions:
         - downloads are found as assets of releases
         - version tags like: 1.2.3, v1.2.3, third number optional
@@ -33,12 +41,31 @@ namespace cwmoss\final_cli;
 
 class upgrade {
 
+    public string $base_url;
+
     public function __construct(
         public string $program_name,
         public string $current_version,
         public string $github_project = "",
+        public string $github_token = "",
         public string $destination = ""
     ) {
+        $this->set_base_url();
+    }
+
+    public function set_base_url() {
+        $base = $this->github_project;
+        if (!str_starts_with($base, "https://")) {
+            $base = "https://api.github.com/repos/{$this->github_project}";
+        }
+        $this->base_url = rtrim($base, "/");
+    }
+
+    public function auth_headers(): array {
+        if ($this->github_token) {
+            return ["Authorization: Bearer {$this->github_token}"];
+        }
+        return [];
     }
 
     /**
@@ -72,8 +99,8 @@ class upgrade {
     }
 
     public function fetch_recent_version(): false|array {
-        $url = "https://api.github.com/repos/{$this->github_project}/releases/latest";
-        $data = new fetch()->get($url);
+        $url = "{$this->base_url}/releases/latest";
+        $data = new fetch(base_headers: $this->auth_headers())->get($url);
         if (!$data) {
             return false;
         }
@@ -105,15 +132,23 @@ class upgrade {
             $term->println("<red>No suitable download found for your platform.</red>");
             return;
         }
-        $url = (string)($asset['browser_download_url'] ?? "");
+        // $url = (string)($asset['browser_download_url'] ?? "");
+        $url = (string)($asset['url'] ?? "");
         $asset_name = (string)($asset['name'] ?? "");
-        $term->println("Start download: {$url}");
+        // $asset_id = (string)($asset['id'] ?? "");
+        $digest = (string)($asset['digest'] ?? "");
+        $size = util::human_filesize((int)($asset['size'] ?? 0));
+
+        $term->println("Start download {$size}: {$url}");
         $temp_file = file::new_tempfile(prefix: 'upgrade_');
 
-        if (!new fetch()->download_file($url, $temp_file)) {
+        if (!new fetch(base_headers: $this->auth_headers())->download_file($url, $temp_file)) {
             $term->println("<red>Failed to download file.</red>");
             return;
         }
+
+        $temp_file->check_digest($digest) or throw new error("digest verification failed.");
+
         if (str_ends_with($asset_name, '.phar')) {
             if (!rename($temp_file->fname, $this->destination)) {
                 $term->println("<red>Failed to replace file.</red>");

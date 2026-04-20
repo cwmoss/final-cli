@@ -159,9 +159,9 @@ class app {
         return $this;
     }
 
-    public function add_upgrade_command(string $github_project): static {
+    public function add_upgrade_command(string $github_project, string $github_token = ""): static {
         if (!self::is_upgradeable()) return $this;
-        $up = new upgrade($this->name, $this->version, $github_project, util::get_self());
+        $up = new upgrade($this->name, $this->version, $github_project, $github_token, util::get_self());
         return $this->add_command($up, "upgrade");
     }
 
