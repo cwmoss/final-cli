@@ -62,6 +62,13 @@ class app {
             $this->help();
             return;
         }
+        // -v should print the version when no command is used
+        // in context of a command -v becomes "verbose"
+        $version = $parser->get_switch('v');
+        if ($version && !$parser->command) {
+            $this->print_version();
+            return;
+        }
         self::$verbose = (int) $parser->get_switch('v', 'verbose');
         try {
             $cmd = $this->match($parser);
@@ -178,6 +185,11 @@ class app {
     public function tag(): string {
         if ($this->tag) return $this->tag;
         return "<inv><b> " . $this->name . " </b></inv>";
+    }
+
+    public function print_version() {
+        $terminal = new terminal();
+        $terminal->println($this->get_version());
     }
 
     public function help(): void {

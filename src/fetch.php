@@ -64,12 +64,13 @@ class fetch {
             $ch = $this->curl_init_w_base_options($url, 60, $headers);
             curl_setopt($ch, CURLOPT_FILE, $fp);
             curl_setopt($ch, CURLOPT_NOPROGRESS, false);
-            curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, function ($resource, int $dltotal, int $dlnow, int $ultotal, int $ulnow) {
+            curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, function (CurlHandle $resource, int $dltotal, int $dlnow, int $ultotal, int $ulnow): int {
                 if ($dltotal > 0) {
                     $percent = (int) round($dlnow / $dltotal * 100);
                     $bar = str_repeat('█', (int)($percent / 2)) . str_repeat('░', 50 - (int)($percent / 2));
                     echo "\r[$bar] $percent%";
                 }
+                return 0;
             });
             $result = curl_exec($ch);
             echo "\n"; // newline after progress
